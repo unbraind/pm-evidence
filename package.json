@@ -19,7 +19,8 @@
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
-    "ARCHITECTURE.md"
+    "ARCHITECTURE.md",
+    "docs/real-data.md"
   ],
   "scripts": {
     "build": "tsc",
@@ -136,5 +137,8 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
+  },
+  "dependencies": {
+    "@toon-format/toon": "^4.4.0"
   }
 }

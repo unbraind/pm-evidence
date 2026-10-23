@@ -1,0 +1,13 @@
+id: pm-evidence-backend-conformance
+title: Verify backend-aware SDK atomic evidence mutations when supported
+description: The pinned SDK commitItemMutations API accepts a filesystem tracker root and cannot inject a remote mutation client. Keep remote backend mutation conformance explicitly unclaimed until the SDK exposes equivalent lock-held expected-state writes through the active backend. No hosted services were accessed.
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-23T07:47:59.020Z"
+updated_at: "2026-10-23T07:47:59.020Z"
+author: codex-agent
+acceptance_criteria: Backend-aware SDK transaction API available; run concurrent distinct and duplicate review conformance against supported backends before claiming support
+parent: pm-evidence-build
+body: ""
