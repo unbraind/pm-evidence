@@ -2,19 +2,22 @@ id: pm-evidence-check
 title: Evidence check
 description: ""
 type: Feature
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-23T07:24:28.252Z"
-updated_at: "2026-10-23T09:06:45.987Z"
+updated_at: "2026-10-23T15:21:37.253Z"
+closed_at: "2026-10-23T15:21:36.897Z"
+completed_at: "2026-10-23T15:21:36.897Z"
 author: codex-agent
 acceptance_criteria: Independent resolution/freshness axes; exact current and fragment digests; outside edits and movement stay current; retained historical replay; bounded inert diffs; omission receipts and last checks
 parent: pm-evidence-build
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-23T07:47:51.015Z",codex-agent,"Behavioral guard revert proof: changed only resolveFragment uniqueness handling so duplicate exact quotes were accepted. The targeted real-tracker regression failed 1 test. Restored source byte-for-byte. Independently changed only checkCitation freshness to use whole-source revision equality; the outside-edit regression failed 1 test. Restored source byte-for-byte. Tests import TypeScript directly, so no stale build could mask either negative control."
   "2026-10-23T08:30:00.580Z",codex-agent,"PR 1 blocking review: prevent a surviving quote in an unrelated passage from replacing changed cited evidence; require saved surrounding context and Markdown section ancestry. Also preserve exact JSON value bytes so distinct large integer lexemes cannot hash as the same value. Add real-tracker check and affected regressions, function-only revert proofs, and complete release gates."
   "2026-10-23T08:51:08.552Z",codex-agent,"PR 1 passage-identity revert proof: restored only resolveFragment from reviewed head b6ef9b5. The real-tracker surviving-quote regression failed 1 test: changed policy evidence was incorrectly current. Restored the fixed function byte-for-byte. The positive suite also verifies unchanged immediate context cannot hide a changed Markdown ancestor, and affected includes both review targets. New heading records store section ancestry; legacy records fail closed after source changes."
   "2026-10-23T08:51:09.167Z",codex-agent,"PR 1 lossless JSON revert proof: restored only pointer from reviewed head b6ef9b5, retaining all new tests and other fixed functions. The real-tracker 9007199254740992 to 9007199254740993 regression failed 1 test because the old floating-point parse reported current. Restored source byte-for-byte. The new parser hashes exact value spans, preserves number/string lexemes and internal whitespace, rejects duplicate decoded keys, and fences legacy lossy descriptors after source changes."
+  "2026-10-23T15:21:28.997Z",codex-agent,"DELIVERED: merged PR #1 (210cc3a319d3f61b4bad69fecbcb741dac61aa7b) is an ancestor of audited main 1bb9e2bfebdde13041e75f5fa9889a97ed577052. Inspected on main: test/evidence.test.ts, test/review-regressions.test.ts. Independent resolution/freshness, source/fragment digests, outside edits and movement, retained replay, bounded inert differences, omission receipts and persisted observations are present; changed passage/JSON identity fails closed. This tracker audit inspected existing tests/files; it does not claim a new full product test run."
 files[6]{path,scope}:
   src/core.ts,project
   src/evidence.ts,project
@@ -27,4 +30,5 @@ tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node --test test/review-regressions.test.ts test/json-spans.test.ts,project,codex-agent,"2026-10-23T08:50:56.876Z",local_mutation,feat/evidence
 docs[1]{path,scope}:
   ARCHITECTURE.md,project
+close_reason: "DELIVERED: merged PR #1 (210cc3a319d3f61b4bad69fecbcb741dac61aa7b) is an ancestor of audited main 1bb9e2bfebdde13041e75f5fa9889a97ed577052. Inspected on main: test/evidence.test.ts, test/review-regressions.test.ts. Independent resolution/freshness, source/fragment digests, outside edits and movement, retained replay, bounded inert differences, omission receipts and persisted observations are present; changed passage/JSON identity fails closed. This tracker audit inspected existing tests/files; it does not claim a new full product test run."
 body: ""
