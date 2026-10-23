@@ -1,0 +1,16 @@
+id: pm-evidence-build
+title: Exact source evidence freshness for agent handoffs
+description: ""
+type: Epic
+status: in_progress
+priority: 2
+tags[1]: "gh:unbraind/pm-cli-companion#253"
+created_at: "2026-10-23T07:23:48.593Z"
+updated_at: "2026-10-23T07:24:03.772Z"
+assignee: codex-agent
+claim_principal: codex-agent
+author: codex-agent
+acceptance_criteria: Five commands and public SDK; unique exact anchors; independent resolution and freshness; fenced idempotent reviews; full gates and real-data proof
+comments[1]{created_at,author,text}:
+  "2026-10-23T07:24:03.769Z",codex-agent,"Scope: companion item pm-cli-website-i3lk and proposal unbraind/pm-cli-companion#253. Local new package only; release remains held. Plan registered item fields, content digest revisions, root-bound file/JSON adapters, bounded checks and SDK relationship traversal. No git required on evidence paths."
+body: ""
