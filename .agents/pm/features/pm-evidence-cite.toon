@@ -6,9 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-23T07:24:24.847Z"
-updated_at: "2026-10-23T07:53:16.099Z"
-assignee: codex-agent
-claim_principal: codex-agent
+updated_at: "2026-10-23T08:12:53.974Z"
 author: codex-agent
 acceptance_criteria: "Existing native items; registered fields; root-relative descriptor and SHA-256 revision; line, heading and escaped JSON pointer selectors; opt-in retained bytes; native file links; duplicate anchors refuse"
 parent: pm-evidence-build

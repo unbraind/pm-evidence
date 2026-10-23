@@ -6,16 +6,15 @@ status: in_progress
 priority: 2
 tags[1]: "gh:unbraind/pm-cli-companion#253"
 created_at: "2026-10-23T07:23:48.593Z"
-updated_at: "2026-10-23T08:02:17.861Z"
-assignee: codex-agent
-claim_principal: codex-agent
+updated_at: "2026-10-23T08:12:52.326Z"
 author: codex-agent
 acceptance_criteria: Five commands and public SDK; unique exact anchors; independent resolution and freshness; fenced idempotent reviews; full gates and real-data proof
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-23T07:24:03.769Z",codex-agent,"Scope: companion item pm-cli-website-i3lk and proposal unbraind/pm-cli-companion#253. Local new package only; release remains held. Plan registered item fields, content digest revisions, root-bound file/JSON adapters, bounded checks and SDK relationship traversal. No git required on evidence paths."
   "2026-10-23T07:41:47.668Z",codex-agent,"Public-data proof: copied public pm-changelog origin/main tracker plus README/docs into a disposable non-git project; cited 20 fragments, then inserted lines, edited a passage, moved a paragraph, duplicated an anchor and removed a document in the copy. Results: resolved/current 16, resolved/changed 1, ambiguous/unknown 1, missing/unknown 2. Full check 2173 estimated tokens versus 17174 whole-document tokens (UTF-8 bytes/4). Budget 800 returned 6 and omitted 14. Scratch copy deleted. Details and reproducible harness will be linked with docs."
   "2026-10-23T07:49:32.738Z",codex-agent,"Final proof packet includes the exact current source revision as well as old/current fragment digests. Reran the complete public-data journey: same 16 current, 1 changed, 1 ambiguous and 2 missing; full check 2607 estimated tokens versus 17174 whole-document estimate. Budget 800 used 708, returned 5, omitted 15. Added checked-at timestamps to persisted last observations without changing deterministic check output. docs/real-data.md records this final measurement."
   "2026-10-23T08:02:17.861Z",codex-agent,All three behavioral negative controls failed their intended tests and restored source bytes exactly. A linked-test run overlapped those temporary guard removals and failed; the subsequent clean linked-test run passed after restoration. The append-only test history retains both outcomes. Final release gates run only against restored source.
+  "2026-10-23T08:12:49.794Z",codex-agent,"Verified implementation head b909cb3: npm run release:check and bun run release:check each passed all 12 stages. Each ran 74 suite tests and 2 packed acceptance journeys covering npm/npx and Bun/bunx. Coverage: 1076/1076 statements and lines, 536/536 branches, 64/64 functions, 18 source files. Docstrings: 53/53 declarations across 18 files. Identity 0 violations; duplication 0 percent with 0 clone pairs; audit 0 vulnerabilities; pack 39 allowlisted files; attestation 1 protected publish invocation. Clean linked pm test run passed 19 tests. Three guard negative controls each failed 1 intended test and restored source exactly. Real-data final: 16 current, 1 changed, 1 ambiguous, 2 missing; 2607 versus 17174 estimated tokens; budget 800 returned 5, omitted 15, used 708. Remote mutation conformance remains explicitly unclaimed and tracked in pm-evidence-backend-conformance."
 files[29]{path,scope}:
   scripts/coverage-gate.ts,project
   scripts/docstring-gate.ts,project
