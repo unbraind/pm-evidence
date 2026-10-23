@@ -5,11 +5,11 @@ export type Resolution = 'resolved' | 'missing' | 'inaccessible' | 'ambiguous' |
 /** Equality of the selected fragment, independent of whole-source revision. */
 export type Freshness = 'current' | 'changed' | 'unknown';
 /** Precisely selected text with neighboring bytes used only for exact boundary recovery. */
-export interface Anchor { quote: string; before: string; after: string }
+export interface Anchor { quote: string; before: string; after: string; sectionPath?: string[] }
 /** External-source selectors; paragraph is one-based within an ATX heading section. */
 export type Selector = { kind: 'lines'; start: number; end: number } | { kind: 'heading'; heading: string; paragraph: number } | { kind: 'pointer'; pointer: string };
 /** Root-relative source descriptor, with no machine-specific root persisted. */
-export interface Descriptor { provider: string; source: string; revision: string; selector: Selector; anchor?: Anchor }
+export interface Descriptor { provider: string; source: string; revision: string; selector: Selector; anchor?: Anchor; jsonEncoding?: 'source-bytes-v1' }
 /** Explicit human review dispositions do not assert semantic truth. */
 export type Disposition = 'still-valid' | 're-anchored' | 'superseded' | 'invalid';
 /** Append-only review observation with a deterministic retry identity. */

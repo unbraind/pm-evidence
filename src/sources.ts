@@ -1,5 +1,6 @@
 import { constants } from 'node:fs';
-import { open, realpath, stat } from 'node:fs/promises';
+import { open, readlink, realpath, stat } from 'node:fs/promises';
+import type { FileHandle } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { EvidenceError, digest, requireInput } from './core.ts';
 import type { EvidenceOptions, ReadContext, SourceAdapter, SourceSnapshot } from './types.ts';
@@ -11,10 +12,25 @@ export function sourceIdentity(source: string): string {
 }
 /** Require a canonical path to stay inside the caller's canonical root. */
 function inside(root: string, path: string): void { const rel = relative(root, path); if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new EvidenceError('boundary', 'Source escapes the selected root', 'Choose a source inside --root and remove escaping symlinks'); }
+/** Optional filesystem lifecycle barriers for deterministic real-source race acceptance tests. */
+export interface SourceReadBarriers { afterCanonical?: () => Promise<void>; afterPathStat?: () => Promise<void> }
+/** Verify the kernel descriptor target and identity instead of trusting a mutable pathname. */
+export async function verifyDescriptor(handle: FileHandle, root: string, platform = process.platform, afterTarget?: () => Promise<void>): Promise<void> {
+  if (platform !== 'linux') throw new EvidenceError('unsupported', 'Descriptor containment verification requires Linux procfs', 'Use Linux with accessible procfs or a trusted adapter with equivalent descriptor guarantees');
+  let target: string;
+  try { target = await readlink(`/proc/self/fd/${handle.fd}`); }
+  catch { throw new EvidenceError('unsupported', 'Descriptor containment verification is unavailable', 'Make Linux procfs descriptor links accessible; path-only reads are not enabled'); }
+  await afterTarget?.();
+  inside(root, target);
+  const canonical = await realpath(target); inside(root, canonical);
+  const opened = await handle.stat({ bigint: true }); const located = await stat(canonical, { bigint: true });
+  if ((['dev', 'ino'] as const).some(key => opened[key] !== located[key])) throw new EvidenceError('race', 'Descriptor target identity changed', 'Retry after source paths and directory writers are stable');
+}
 /** Coherent, bounded local UTF-8 snapshot; changed metadata or identity refuses the read. */
-export async function readFileSnapshot(source: string, context: ReadContext, afterDiscovery?: () => Promise<void>): Promise<SourceSnapshot> {
+export async function readFileSnapshot(source: string, context: ReadContext, afterDiscovery?: () => Promise<void>, barriers: SourceReadBarriers = {}): Promise<SourceSnapshot> {
   const root = await realpath(context.root); const path = resolve(root, sourceIdentity(source)); inside(root, path);
   const canonical = await realpath(path); inside(root, canonical);
+  await barriers.afterCanonical?.();
   const discovered = await stat(canonical, { bigint: true });
   if (!discovered.isFile() || (discovered.mode & 0o444n) === 0n) throw new EvidenceError('inaccessible', 'Source is not a readable regular file', 'Restore read permissions or select a regular file');
   if (discovered.size > BigInt(context.maxBytes)) throw new EvidenceError('size', 'Source exceeds the size cap', 'Select a smaller source or explicitly increase maxBytes');
@@ -22,12 +38,15 @@ export async function readFileSnapshot(source: string, context: ReadContext, aft
   context.signal.throwIfAborted();
   const handle = await open(canonical, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
+    await verifyDescriptor(handle, root);
     const bytes = Buffer.alloc(context.maxBytes + 1); let used = 0;
     while (used < bytes.length) { context.signal.throwIfAborted(); const read = await handle.read(bytes, used, bytes.length - used, used); if (read.bytesRead === 0) break; used += read.bytesRead; }
     if (used > context.maxBytes) throw new EvidenceError('size', 'Source grew beyond the size cap', 'Retry with a stable smaller source');
     const after = await handle.stat({ bigint: true }); const current = await stat(path, { bigint: true });
+    await barriers.afterPathStat?.();
     if (['dev', 'ino', 'size', 'mtimeNs', 'ctimeNs'].some(key => discovered[key as 'ino'] !== after[key as 'ino'] || after[key as 'ino'] !== current[key as 'ino'])) throw new EvidenceError('race', 'Source changed during discovery or read', 'Retry after the source writer finishes');
     inside(root, await realpath(path));
+    await verifyDescriptor(handle, root);
     const text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes.subarray(0, used));
     return { text, revision: digest(text) };
   } finally { await handle.close(); }

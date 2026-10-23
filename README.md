@@ -6,7 +6,7 @@ This is an unreleased package under local review. Publication requires maintaine
 
 ## Install
 
-Requires Node 22.18+ and pm 2026.10.23+. From this checkout:
+Requires Node 22.18+ and pm 2026.10.23+. Built-in file/JSON reads require Linux with accessible procfs descriptor links and fail closed on unsupported platforms; no weaker path-only mode is enabled. From this checkout:
 
 ```sh
 npm ci
@@ -32,7 +32,7 @@ All commands use the native host renderer: TOON by default, `--json` for JSON. U
 | review | `pm evidence review decision-id --citation ev-id --disposition still-valid --reason "Reviewed the changed fragment"` | Durable, fenced, retry-safe observation |
 | show | `pm evidence show decision-id` | Citation metadata, reviews, evidence revision and last check |
 
-Choose exactly one cite selector: `--lines 3-5`, `--heading "Release policy"` (first paragraph below a unique ATX heading), or `--pointer /policy/a~1b` (JSON key `a/b`). An empty pointer selects the JSON root. Line ranges are inclusive and one-based. Exact quotes can move within a file; duplicates refuse as ambiguous. Changes inside a fragment can be located by unique exact surrounding boundaries. No fuzzy re-binding occurs.
+Choose exactly one cite selector: `--lines 3-5`, `--heading "Release policy"` (first paragraph below a unique ATX heading), or `--pointer /policy/a~1b` (JSON key `a/b`). An empty pointer selects the JSON root. JSON digests preserve exact selected value bytes, including large integer and exponent lexemes, internal whitespace and escape spelling. Duplicate decoded keys refuse as ambiguous; older lossy JSON records require explicit re-anchoring after source changes. Line ranges are inclusive and one-based. Quotes can move only with matching saved surroundings and, for Markdown headings, matching section ancestry; an unrelated surviving example never proves a cited passage current. Duplicates refuse as ambiguous. Changes inside a fragment can be located by unique exact surrounding boundaries. No fuzzy re-binding occurs.
 
 `check` without item IDs reads the certified full tracker. Multiple IDs are accepted. `--diff` returns only changed fragment data, with escaped controls, never whole documents. Original diff lines are available only with retained bytes. It records each citation's last check through SDK mutations; use `check(...,{record:false})` for an entirely read-only SDK journey.
 
@@ -80,13 +80,13 @@ await review('decision-id', {
 
 ## Real-data proof
 
-A copied public pm-changelog tracker at `600d9ffb564205d37262dd450c8a32b890017912` supplied 20 existing items and 20 genuine README/docs fragments across 10 documents. The scratch project had no git repository; evidence operations ran with no git executable. After insertion, an internal edit, paragraph movement, anchor duplication and document deletion: **16 resolved/current, 1 resolved/changed, 1 ambiguous/unknown, 2 missing/unknown**. The full check cost **2,607 estimated tokens**, versus **17,174** for complete cited documents (68,694 reachable bytes). These are UTF-8 bytes/4 estimates, not a tokenizer or a measured model saving. The 800-token check used 708, returning 5 and explicitly omitting 15.
+A copied public pm-changelog tracker at `600d9ffb564205d37262dd450c8a32b890017912` supplied 20 existing items and 20 genuine README/docs fragments across 10 documents. The scratch project had no git repository; evidence operations ran with no git executable. After insertion, an internal edit, paragraph movement, anchor duplication and document deletion: **15 resolved/current, 1 resolved/changed, 2 ambiguous/unknown, 2 missing/unknown**. The full check cost **2,619 estimated tokens**, versus **17,174** for complete cited documents (68,694 reachable bytes). These are UTF-8 bytes/4 estimates, not a tokenizer or a measured model saving. The 800-token check used 720, returning 5 and explicitly omitting 15.
 
-There were 20 cite calls, 3 check calls, 1 affected call, 1 corpus discovery and 100 source reads across the entire evaluation, including the baseline and bounded rerun. Affected returned four review candidates and declared incomplete source evidence. One duplicated exact anchor was ambiguous; it was never silently rebound. The temporary copy was deleted. See [the proof details](docs/real-data.md) and `node test/real-data.acceptance.ts <public-checkout>` to reproduce against that checkout's origin/main.
+There were 20 cite calls, 3 check calls, 1 affected call, 1 corpus discovery and 100 source reads across the entire evaluation, including the baseline and bounded rerun. Affected returned five review candidates and declared incomplete source evidence. A duplicated exact anchor and a paragraph moved without its saved context were ambiguous; neither was silently rebound. The temporary copy was deleted. See [the proof details](docs/real-data.md) and `node test/real-data.acceptance.ts <public-checkout>` to reproduce against that checkout's origin/main.
 
 ## Without git
 
-Cite, check, affected, review, show, retained replay and all SDK APIs work in ordinary initialized trackers without git. No evidence command invokes git. The development identity audit and the optional public-repository evaluation harness require git; neither is part of evidence command execution.
+Cite, check, affected, review, show, retained replay and all SDK APIs work in ordinary initialized trackers without git. No evidence command invokes git. The development identity audit and the optional public-data and function-revert evaluation harnesses require git; neither is part of evidence command execution.
 
 ## Exit codes and development
 

@@ -19,7 +19,7 @@ test('unchanged, outside edits, insertion, movement, duplicate anchors, internal
   assert.equal((await show(f.item, f.options)).citations[0].lastCheck?.freshness, 'current');
   await writeFile(file, 'Inserted above\n' + text + 'Outside edit\n'); result = await check([], { ...f.options, record: false, budget: 3000 });
   assert.equal(result.rows[0].resolution, 'resolved'); assert.equal(result.rows[0].freshness, 'current'); assert.equal(result.rows[0].sourceChanged, true);
-  await writeFile(file, 'Moved preface\nfirst claim\nsecond claim\nDifferent tail\n'); result = await check([f.item, f.item], { ...f.options, record: false }); assert.equal(result.rows[0].freshness, 'current');
+  await writeFile(file, 'Moved preface beyond the retained context.\n' + text); result = await check([f.item, f.item], { ...f.options, record: false }); assert.equal(result.rows[0].freshness, 'current');
   await writeFile(file, text + '\nfirst claim\nsecond claim\n'); result = await check([f.item], { ...f.options, record: false }); assert.equal(result.rows[0].resolution, 'ambiguous'); assert.equal(result.rows[0].freshness, 'unknown');
   await writeFile(file, text.replace('first claim', 'changed claim')); result = await check([f.item], { ...f.options, diff: true, record: false, budget: 3000 });
   assert.equal(result.rows[0].freshness, 'changed'); assert.notEqual(result.rows[0].oldDigest, result.rows[0].currentDigest); assert.deepEqual(result.rows[0].diff?.current, ['changed claim', 'second claim']);
@@ -31,11 +31,11 @@ test('unchanged, outside edits, insertion, movement, duplicate anchors, internal
   assert.equal((await checkCitation({ ...saved, retained: undefined }, { ...f.options, revision: 'cited' })).resolution, 'missing');
 });
 
-test('heading paragraphs move by unique anchor; JSON pointers use RFC 6901 escaping', async t => {
+test('heading identity changes require review; JSON pointers use RFC 6901 escaping', async t => {
   const f = await tracker(t); const file = join(f.root, 'doc.md');
   await writeFile(file, '# First\n\nIntro paragraph.\n\n## Policy\n\nCited paragraph.\n\nOther paragraph.\n');
   await cite(f.item, 'doc.md', { ...f.options, selector: { kind: 'heading', heading: 'Policy', paragraph: 1 } });
-  await writeFile(file, '# Reordered\n\nCited paragraph.\n'); assert.equal((await check([f.item], { ...f.options, record: false })).rows[0].freshness, 'current');
+  await writeFile(file, '# Reordered\n\nCited paragraph.\n'); assert.equal((await check([f.item], { ...f.options, record: false })).rows[0].resolution, 'ambiguous');
   await writeFile(join(f.root, 'config.json'), '{"a/b":{"~key": ["old"]},"other":1}');
   const citation = await cite(f.item, 'config.json', { ...f.options, selector: { kind: 'pointer', pointer: '/a~1b/~0key/0' } });
   await writeFile(join(f.root, 'config.json'), '{"a/b":{"~key": ["new"]},"other":2}');
@@ -120,9 +120,9 @@ test('native SDK file links preserve comma and key-like source identities', asyn
 });
 
 test('re-anchoring follows moved evidence, refuses ambiguity and accepts explicit replacement selectors', async t => {
-  const f = await tracker(t); const file = join(f.root, 'doc.md'); await writeFile(file, 'Before\nOriginal claim\nAfter');
+  const f = await tracker(t); const file = join(f.root, 'doc.md'); await writeFile(file, 'Unchanged context before the passage.\nOriginal claim\nAfter');
   const receipt = await cite(f.item, 'doc.md', { ...f.options, selector: { kind: 'lines', start: 2, end: 2 }, retain: true });
-  await writeFile(file, 'New preface\nBefore\nOriginal claim\nAfter');
+  await writeFile(file, 'New preface\nUnchanged context before the passage.\nOriginal claim\nAfter');
   const reviewOptions = { ...f.options, citation: receipt.citation, disposition: 're-anchored' as const, reason: 'Follow exact moved evidence' };
   const moved = await review(f.item, reviewOptions); let saved = (await new Store(f.options).get(f.item)).value;
   assert.equal(saved.citations.find(entry => entry.id === moved.replacement)?.fragmentDigest, saved.citations[0].fragmentDigest);

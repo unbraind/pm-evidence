@@ -6,17 +6,25 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-23T07:24:28.252Z"
-updated_at: "2026-10-23T08:12:55.287Z"
+updated_at: "2026-10-23T09:06:45.987Z"
 author: codex-agent
 acceptance_criteria: Independent resolution/freshness axes; exact current and fragment digests; outside edits and movement stay current; retained historical replay; bounded inert diffs; omission receipts and last checks
 parent: pm-evidence-build
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-23T07:47:51.015Z",codex-agent,"Behavioral guard revert proof: changed only resolveFragment uniqueness handling so duplicate exact quotes were accepted. The targeted real-tracker regression failed 1 test. Restored source byte-for-byte. Independently changed only checkCitation freshness to use whole-source revision equality; the outside-edit regression failed 1 test. Restored source byte-for-byte. Tests import TypeScript directly, so no stale build could mask either negative control."
-files[2]{path,scope}:
-  src/evidence.ts,project
+  "2026-10-23T08:30:00.580Z",codex-agent,"PR 1 blocking review: prevent a surviving quote in an unrelated passage from replacing changed cited evidence; require saved surrounding context and Markdown section ancestry. Also preserve exact JSON value bytes so distinct large integer lexemes cannot hash as the same value. Add real-tracker check and affected regressions, function-only revert proofs, and complete release gates."
+  "2026-10-23T08:51:08.552Z",codex-agent,"PR 1 passage-identity revert proof: restored only resolveFragment from reviewed head b6ef9b5. The real-tracker surviving-quote regression failed 1 test: changed policy evidence was incorrectly current. Restored the fixed function byte-for-byte. The positive suite also verifies unchanged immediate context cannot hide a changed Markdown ancestor, and affected includes both review targets. New heading records store section ancestry; legacy records fail closed after source changes."
+  "2026-10-23T08:51:09.167Z",codex-agent,"PR 1 lossless JSON revert proof: restored only pointer from reviewed head b6ef9b5, retaining all new tests and other fixed functions. The real-tracker 9007199254740992 to 9007199254740993 regression failed 1 test because the old floating-point parse reported current. Restored source byte-for-byte. The new parser hashes exact value spans, preserves number/string lexemes and internal whitespace, rejects duplicate decoded keys, and fences legacy lossy descriptors after source changes."
+files[6]{path,scope}:
   src/core.ts,project
-tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  src/evidence.ts,project
+  src/json-spans.ts,project
+  src/selectors.ts,project
+  test/json-spans.test.ts,project
+  test/review-regressions.test.ts,project
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node --test test/evidence.test.ts test/selectors.test.ts,project,codex-agent,"2026-10-23T07:53:17.520Z",local_mutation,feat/evidence
+  node --test test/review-regressions.test.ts test/json-spans.test.ts,project,codex-agent,"2026-10-23T08:50:56.876Z",local_mutation,feat/evidence
 docs[1]{path,scope}:
   ARCHITECTURE.md,project
 body: ""

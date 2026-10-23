@@ -6,13 +6,14 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-23T07:24:43.403Z"
-updated_at: "2026-10-23T08:13:01.057Z"
+updated_at: "2026-10-23T09:06:47.037Z"
 author: codex-agent
 acceptance_criteria: Path and symlink escape refusals; regular-file and size bounds; source controls rendered inert; no private roots in receipts; all three behavioral guard reverts fail; npm/npx/Bun/bunx packed acceptance; full coverage and release gates
 parent: pm-evidence-build
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-23T08:00:03.272Z",codex-agent,"First complete npm release gate passed all 12 stages, 73 suite tests and 2 packed consumer journeys. Coverage was 100 percent in statements, branches, functions and lines across all 18 authored source files; docstrings 52 declarations, duplication zero, identity zero violations, production audit zero vulnerabilities, 39 allowlisted packed files and 1 attested publish invocation. Final re-anchoring regression adds one test and will be included in final npm/Bun gates."
   "2026-10-23T08:12:51.041Z",codex-agent,"All final npm and Bun release stages passed on b909cb3, including 74 suite tests, full four-axis coverage and both packed consumers. The installed pm-ops prepare template is copied byte-for-byte. A tracked-file scan found zero binaries or private absolute paths; scaffold history remains an unchanged prefix of the append-only history. Existing native file-link annotations survive citation writes. Claims are released for orchestrator review; items remain open or in progress."
+  "2026-10-23T09:06:44.765Z",codex-agent,"All three false-current review findings are fixed with real SDK trackers and filesystem data, without SDK mocks. Built-in reads fail closed without Linux procfs descriptor verification; no weaker fallback exists. Source paths remain relative, diagnostics contain no private roots, JSON numbers are never rounded during selection, and old lossy/scopeless records require explicit review after source changes. Full npm and Bun gates passed at unchanged 100 percent thresholds before committing and pushing only the feature branch."
 files[3]{path,scope}:
   test/commands.test.ts,project
   test/install.acceptance.ts,project

@@ -3,14 +3,14 @@ import { digest, EvidenceError, inert, packet, requireInput } from './core.ts';
 import { anchor, resolveFragment, select } from './selectors.ts';
 import { snapshot, sourceIdentity } from './sources.ts';
 import { citationById, state, Store } from './store.ts';
-import type { AffectedOptions, CheckOptions, CheckRow, Citation, CiteOptions, EvidenceOptions, Impact, ReviewOptions, Resolution, SourceSnapshot, Selector } from './types.ts';
+import type { AffectedOptions, CheckOptions, CheckRow, Citation, CiteOptions, EvidenceOptions, Impact, ReviewOptions, Resolution, SourceSnapshot, Selector, Descriptor } from './types.ts';
 
 /** Build a source-bound citation without reading or rewriting the native item schema. */
-async function prepare(item: string, source: string, options: CiteOptions, author: string, sourceSnapshot?: SourceSnapshot): Promise<Citation> {
+async function prepare(item: string, source: string, options: CiteOptions, author: string, sourceSnapshot?: SourceSnapshot, sectionScoped = false): Promise<Citation> {
   const identity = sourceIdentity(source); const provider = options.provider ?? (options.selector.kind === 'pointer' ? 'json' : 'file');
   requireInput(provider !== 'json' || options.selector.kind === 'pointer', 'JSON sources require a pointer selector');
   const read = sourceSnapshot ?? await snapshot(provider, identity, options); const selected = select(read.text, options.selector);
-  const descriptor = { provider, source: identity, revision: read.revision, selector: options.selector, ...(options.selector.kind === 'pointer' ? {} : { anchor: anchor(read.text, selected) }) };
+  const descriptor: Descriptor = { provider, source: identity, revision: read.revision, selector: options.selector, ...(options.selector.kind === 'pointer' ? { jsonEncoding: 'source-bytes-v1' as const } : { anchor: anchor(read.text, selected, options.selector.kind === 'heading' || sectionScoped) }) };
   if (descriptor.anchor !== undefined) resolveFragment(read.text, descriptor);
   const fragmentDigest = digest(selected.text);
   return { id: `ev-${digest(JSON.stringify([item, descriptor, fragmentDigest])).slice(0, 24)}`, descriptor, fragmentDigest, ...(options.retain === true ? { retained: Buffer.from(selected.text).toString('base64') } : {}), provenance: { item, author, at: new Date().toISOString() }, reviews: [] };
@@ -88,7 +88,7 @@ async function reanchor(item: string, original: Citation, options: ReviewOptions
     const start = read.text.slice(0, fragment.start).split('\n').length;
     selector = { kind: 'lines', start, end: start + fragment.text.split('\n').length - 1 };
   }
-  return prepare(item, original.descriptor.source, { ...options, provider: original.descriptor.provider, selector, retain: original.retained !== undefined }, author, read);
+  return prepare(item, original.descriptor.source, { ...options, provider: original.descriptor.provider, selector, retain: original.retained !== undefined }, author, read, original.descriptor.selector.kind === 'heading' || original.descriptor.anchor?.sectionPath !== undefined);
 }
 /** Append an idempotent review through lock-held expected-state mutation, preserving original evidence. */
 export async function review(item: string, options: ReviewOptions) {

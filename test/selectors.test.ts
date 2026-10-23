@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { select, anchor, resolveFragment, hits } from '../src/selectors.ts';
+import { select, anchor, resolveFragment, hits, sectionPath } from '../src/selectors.ts';
 import { digest, inert, packet, tokens } from '../src/core.ts';
 import { sourceIdentity, snapshot } from '../src/sources.ts';
 import { state, citationById } from '../src/store.ts';
@@ -19,7 +19,7 @@ test('selector boundaries, duplicate quotes, exact context recovery and strict f
   assert.throws(() => resolveFragment('before\nnew\nafterbefore\nnew\nafter', middle), /repeated/);
   assert.throws(() => resolveFragment('oldold', full), /more than once/);
   assert.throws(() => resolveFragment('old', { ...full, anchor: undefined }), /no anchor/);
-  assert.equal(resolveFragment('old after', descriptor('old\nafter')).text, 'old');
+  assert.throws(() => resolveFragment('old after', descriptor('old\nafter')), /surroundings/);
   const tail = descriptor('before\nold', 2, 2); assert.equal(resolveFragment('before\nnew', tail).text, 'new');
   assert.throws(() => resolveFragment('afterbefore', { ...middle, anchor: { quote: 'gone', before: 'before', after: 'after' } }));
 });
@@ -39,7 +39,7 @@ test('JSON pointer root, arrays, invalid syntax, escapes and own properties', ()
   assert.equal(pointer('[false,null]', '/1'), 'null');
   for (const path of ['a', '/~2', '/~']) assert.throws(() => pointer('{}', path));
   for (const [source, path] of [['invalid',''], ['{}','/missing'], ['null','/x'], ['[1]','/00'], ['[1]','/length'], ['{}','/__proto__'], ['1','/x']]) assert.throws(() => pointer(source, path));
-  assert.equal(resolveFragment('{"x":3}', { provider: 'json', source: 'x.json', revision: 'old', selector: { kind: 'pointer', pointer: '/x' } }).text, '3');
+  assert.equal(resolveFragment('{"x":3}', { provider: 'json', source: 'x.json', revision: 'old', jsonEncoding: 'source-bytes-v1', selector: { kind: 'pointer', pointer: '/x' } }).text, '3');
 });
 
 test('packet measures all host bytes, bounds omission receipt and rejects malformed state', () => {
@@ -67,4 +67,16 @@ test('adapter failures do not expose raw exception values or native diagnostics'
   for (const error of [null, new Error('unavailable'), 'unavailable', { code: 'EACCES' }, { code: 'ENOTDIR' }]) {
     await assert.rejects(snapshot('custom', 'source', { workspace: 'unused', adapters: [{ provider: 'custom', read: async () => { throw error; } }] }));
   }
+});
+
+
+test('section ancestry follows ATX nesting and preserved-context relocation only', () => {
+  const source = '# Previous\n\nPrevious body.\n\n# Parent\n\n## Child\n\nClaim.\n\n# Later\n';
+  const fragment = select(source, { kind: 'heading', heading: 'Child', paragraph: 1 });
+  assert.deepEqual(sectionPath(source, fragment.start), ['Parent', 'Child']);
+  const witness = anchor(source, fragment, true);
+  const descriptor: Descriptor = { provider: 'file', source: 'policy.md', revision: digest(source), selector: { kind: 'heading', heading: 'Child', paragraph: 1 }, anchor: witness };
+  assert.equal(resolveFragment('Unrelated preface.\n' + source, descriptor).text, 'Claim.');
+  assert.throws(() => resolveFragment(source.replace('# Parent', '# Examples'), descriptor), /section identity/);
+  assert.deepEqual(sectionPath('plain text', 5), []);
 });

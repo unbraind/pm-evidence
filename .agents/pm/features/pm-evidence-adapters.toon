@@ -6,17 +6,21 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-23T07:24:39.415Z"
-updated_at: "2026-10-23T08:12:59.458Z"
+updated_at: "2026-10-23T09:06:46.517Z"
 author: codex-agent
 acceptance_criteria: Exported typed adapter API; no git on source paths; coherent real filesystem revision or typed refusal under race; strict RFC 6901 pointers; size/deadline/cancellation bounds
 parent: pm-evidence-build
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-23T07:53:26.152Z",codex-agent,"Real filesystem race barrier changed a source after discovery and before open: refused mixed revisions; stable subsequent read had the exact expected SHA-256. Replacement, growth, invalid UTF-8, BOM preservation, unreadable files, custom adapter deadlines and cancellation are covered without SDK mocks."
-files[2]{path,scope}:
+  "2026-10-23T08:30:01.382Z",codex-agent,"PR 1 blocking review: verify the opened descriptor target through Linux procfs and its device/inode, before reading, so parent symlink swaps cannot escape the selected root. Fail closed when descriptor verification is unavailable; document the Linux platform boundary. Add a deterministic real-filesystem parent-swap regression and function-only revert proof."
+  "2026-10-23T08:51:09.851Z",codex-agent,"PR 1 descriptor-containment revert proof: changed only verifyDescriptor to the prior unverified no-op behavior while keeping real filesystem swap/restore barriers active. The regression failed 1 test because an external descriptor was accepted as current after parent symlink swap and pathname restoration. Restored source byte-for-byte. Positive tests verify before/after-read kernel descriptor containment, device/inode identity, closed-descriptor refusal and unsupported-platform refusal. Linux procfs is required; no weaker path-only fallback exists."
+files[3]{path,scope}:
   src/sources.ts,project
   src/types.ts,project
-tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  test/review-regressions.test.ts,project
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node --test test/sources.test.ts test/selectors.test.ts,project,codex-agent,"2026-10-23T07:53:23.274Z",local_mutation,feat/evidence
+  node --test test/review-regressions.test.ts test/json-spans.test.ts,project,codex-agent,"2026-10-23T08:50:57.882Z",local_mutation,feat/evidence
 docs[1]{path,scope}:
   ARCHITECTURE.md,project
 body: ""

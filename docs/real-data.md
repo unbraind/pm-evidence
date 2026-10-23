@@ -12,12 +12,16 @@ Only a disposable copy was changed. No source fleet tracker was written. The pub
     "resolved/current": 20
   },
   "statuses": {
-    "resolved/current": 16,
+    "resolved/current": 15,
     "resolved/changed": 1,
-    "ambiguous/unknown": 1,
+    "ambiguous/unknown": 2,
     "missing/unknown": 2
   },
   "ambiguous": [
+    {
+      "item": "pmc-review-266",
+      "citation": "ev-26f599f9e2a493637ef2a364"
+    },
     {
       "item": "pmc-lwfw",
       "citation": "ev-4982f42c132f4e4040682aff"
@@ -25,10 +29,10 @@ Only a disposable copy was changed. No source fleet tracker was written. The pub
   ],
   "comparison": {
     "estimator": "ceil(utf8_bytes/4), not a tokenizer",
-    "fullCheckTokens": 2607,
+    "fullCheckTokens": 2619,
     "wholeDocumentsTokens": 17174,
     "wholeDocumentsBytes": 68694,
-    "boundedCheckTokens": 708,
+    "boundedCheckTokens": 720,
     "boundedReturned": 5,
     "boundedOmitted": 15
   },
@@ -40,14 +44,16 @@ Only a disposable copy was changed. No source fleet tracker was written. The pub
     "sourceReads": 100
   },
   "affected": {
-    "returned": 4,
+    "returned": 5,
     "omitted": 0,
     "complete": false
   },
-  "elapsedMs": 52949,
+  "elapsedMs": 12193,
   "noGit": true,
   "scratchRemoved": true
 }
 ```
 
 Reproduce with `node test/real-data.acceptance.ts <public-pm-changelog-checkout>`. The harness uses that checkout's origin/main, archives only the public tracker and README/docs, verifies the scratch project is not a git repository, then removes git from PATH during the evidence journey.
+
+The PR review rerun applies strict passage-context matching. A moved paragraph whose saved surroundings no longer match now requires review as ambiguous, alongside the duplicated quote. Both remain in affected context.
