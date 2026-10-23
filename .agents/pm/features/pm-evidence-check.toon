@@ -1,0 +1,24 @@
+id: pm-evidence-check
+title: Evidence check
+description: ""
+type: Feature
+status: in_progress
+priority: 2
+tags: []
+created_at: "2026-10-23T07:24:28.252Z"
+updated_at: "2026-10-23T07:53:17.684Z"
+assignee: codex-agent
+claim_principal: codex-agent
+author: codex-agent
+acceptance_criteria: Independent resolution/freshness axes; exact current and fragment digests; outside edits and movement stay current; retained historical replay; bounded inert diffs; omission receipts and last checks
+parent: pm-evidence-build
+comments[1]{created_at,author,text}:
+  "2026-10-23T07:47:51.015Z",codex-agent,"Behavioral guard revert proof: changed only resolveFragment uniqueness handling so duplicate exact quotes were accepted. The targeted real-tracker regression failed 1 test. Restored source byte-for-byte. Independently changed only checkCitation freshness to use whole-source revision equality; the outside-edit regression failed 1 test. Restored source byte-for-byte. Tests import TypeScript directly, so no stale build could mask either negative control."
+files[2]{path,scope}:
+  src/evidence.ts,project
+  src/core.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node --test test/evidence.test.ts test/selectors.test.ts,project,codex-agent,"2026-10-23T07:53:17.520Z",local_mutation,feat/evidence
+docs[1]{path,scope}:
+  ARCHITECTURE.md,project
+body: ""

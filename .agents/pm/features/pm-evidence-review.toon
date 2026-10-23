@@ -1,0 +1,26 @@
+id: pm-evidence-review
+title: Evidence review
+description: ""
+type: Feature
+status: in_progress
+priority: 2
+tags: []
+created_at: "2026-10-23T07:24:35.986Z"
+updated_at: "2026-10-23T08:00:00.699Z"
+assignee: codex-agent
+claim_principal: codex-agent
+author: codex-agent
+acceptance_criteria: Expected-state SDK transaction; concurrent independent process reviews retain distinct observations; identical retries deduplicate; explicit revision refuses stale calls; re-anchoring retains original citation
+parent: pm-evidence-build
+comments[3]{created_at,author,text}:
+  "2026-10-23T07:41:45.606Z",codex-agent,Implemented SDK atomic mutations with match preconditions on the registered evidence_state envelope. Initial writes fence updated_at because the pinned SDK rejects absent match values. Concurrent distinct and repeated review observations passed on real no-git trackers; original citations remain intact when re-anchored. SDK schema fields need their generated evidenceState option inside transactions; field assignments require an active extension registration.
+  "2026-10-23T07:47:55.976Z",codex-agent,"Behavioral guard revert proof: removed only the match precondition inside Store.commit. The stale SDK item mutation regression failed 1 test because the update overwrote evidence instead of refusing. Restored source byte-for-byte. Positive tests preserve original citation digests and deduplicate repeated observations across concurrent reviewers. test/revert.acceptance.ts reproduces all three negative controls."
+  "2026-10-23T08:00:00.698Z",codex-agent,"Re-anchoring now follows the uniquely resolved current fragment after movement; it never reuses stale line offsets implicitly. A single coherent source snapshot supplies the replacement descriptor and digest. Ambiguous originals refuse unless the caller explicitly supplies a unique replacement selector. Regression tests cover moved fragments, explicit replacement, preserved retained originals and JSON pointer re-anchoring."
+files[2]{path,scope}:
+  src/store.ts,project
+  test/process.test.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node --test test/evidence.test.ts test/process.test.ts test/store.test.ts,project,codex-agent,"2026-10-23T07:53:22.353Z",local_mutation,feat/evidence
+docs[1]{path,scope}:
+  ARCHITECTURE.md,project
+body: ""

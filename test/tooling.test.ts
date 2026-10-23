@@ -148,8 +148,8 @@ test('the manifest coverage gate owns the full authored scope without exemptions
   assert.deepEqual(ignore, []);
 });
 
-test('shared memory kind contracts load with the four supported values', () => {
-  assert.deepEqual(typeContracts.KINDS, ['user', 'feedback', 'project', 'reference']);
+test('evidence type contracts erase without runtime state', () => {
+  assert.deepEqual(Object.keys(typeContracts), []);
 });
 
 test("published flat configuration can be consumed directly", () => { assert.ok(Array.isArray(fleetConfig)); });

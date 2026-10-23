@@ -1,0 +1,23 @@
+id: pm-evidence-affected
+title: Evidence affected
+description: ""
+type: Feature
+status: in_progress
+priority: 2
+tags: []
+created_at: "2026-10-23T07:24:31.959Z"
+updated_at: "2026-10-23T07:53:27.317Z"
+assignee: codex-agent
+claim_principal: codex-agent
+author: codex-agent
+acceptance_criteria: Certified full SDK corpus; changed and unknown evidence request review; bounded SDK parent/dependent paths; explicit returned/omitted counts and source incompleteness; no false exhaustive claim
+parent: pm-evidence-build
+comments[1]{created_at,author,text}:
+  "2026-10-23T07:53:27.315Z",codex-agent,Affected composes certified complete corpus reads and the native RelationshipGraph. It reports parents and incoming dependents with bounded paths; changed and unresolved evidence request review. Unknown source evidence or unexpanded graph frontiers mark the report incomplete. Output omissions count enumerated rows only; unknown nodes beyond traversal bounds are documented separately.
+files[1]{path,scope}:
+  src/evidence.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node --test test/evidence.test.ts,project,codex-agent,"2026-10-23T07:53:20.185Z",local_mutation,feat/evidence
+docs[1]{path,scope}:
+  docs/real-data.md,project
+body: ""
