@@ -2,13 +2,18 @@ id: pm-evidence-reconcile-1023
 title: Reconcile stale in-progress tracker records (2026-10-23)
 description: "Audit current main, open pull requests and recently pushed live branches. Close only fully proved mainline delivery; release incomplete acceptance to open. Tracker and changelog only. Audit remains open until its pull request is reviewed and merged."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[2]: maintenance,tracker-reconciliation
 created_at: "2026-10-23T15:19:42.433Z"
-updated_at: "2026-10-23T15:24:52.899Z"
+updated_at: "2026-10-24T21:45:39.186Z"
+closed_at: "2026-10-24T21:45:39.160Z"
+completed_at: "2026-10-24T21:45:39.160Z"
 author: codex-agent
 acceptance_criteria: Per-item verdicts cite inspected mainline artifacts and merged PR coordinates; protected work remains unchanged; append-only histories and local changelog/health checks are verified; submit tracker-only PR for orchestrator review
+resolution: "Delivers the inspected seven-item closeout audit with append-only history, health and regenerated changelog verification."
+expected_result: Per-item verdicts cite inspected mainline artifacts and merged PR coordinates; protected work remains unchanged; append-only histories and local changelog/health checks are verified; submit tracker-only PR for orchestrator review
+actual_result: "https://github.com/unbraind/pm-evidence/pull/3, merged 2026-10-23T16:01:22Z, merge 3dfeaae8d43d16f8e34f0aaecc404d1724ed2c51: Delivers the inspected seven-item closeout audit with append-only history, health and regenerated changelog verification."
 comments[3]{created_at,author,text}:
   "2026-10-23T15:20:03.046Z",codex-agent,"Plan: reconcile 7 unprotected records against main 1bb9e2bfebdde13041e75f5fa9889a97ed577052. Open PR changed tracker files and text were checked through REST. Recent push events were combined with currently live branch refs and changed tracker files; deleted refs are not active contention. No source changes or full local release reruns; CI owns the complete release gate. Preserve all prior history bytes."
   "2026-10-23T15:22:32.141Z",codex-agent,"Reconciliation writes complete. Linked git diff --check passed. All delivery coordinates and evidence files were checked against main; owner decisions and incomplete acceptance were retained as open. Final changelog generation/check, pinned health, append-only history, lifecycle/privacy/scope checks and push verification follow before PR submission. Full npm/Bun release gates are delegated to CI. This audit item remains open pending orchestrator review/merge."
@@ -19,4 +24,5 @@ tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   git diff --check,project,codex-agent,"2026-10-23T15:20:21.290Z",local_mutation,chore/reconcile-in-progress-1023
 docs[1]{path,scope}:
   CHANGELOG.md,project
+close_reason: "https://github.com/unbraind/pm-evidence/pull/3, merged 2026-10-23T16:01:22Z, merge 3dfeaae8d43d16f8e34f0aaecc404d1724ed2c51: Delivers the inspected seven-item closeout audit with append-only history, health and regenerated changelog verification."
 body: ""
