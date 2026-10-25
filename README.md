@@ -36,6 +36,31 @@ Choose exactly one cite selector: `--lines 3-5`, `--heading "Release policy"` (f
 
 `check` without item IDs reads the certified full tracker. Multiple IDs are accepted. `--diff` returns only changed fragment data, with escaped controls, never whole documents. Original diff lines are available only with retained bytes. It records each citation's last check through SDK mutations; use `check(...,{record:false})` for an entirely read-only SDK journey.
 
+## Coalesced source verification
+
+`pm evidence check --read-only --root . --budget 800 --json` resolves all citations to each authorized provider/source against **one immutable snapshot per invocation**, even across items and different cited revisions. Fifty citations into one unchanged document require one guarded source-read attempt. Successful snapshots and refusals are shared; a later check reads afresh. Provider identities stay separate, including custom overrides of file or JSON readers. No persistent source cache or new source authority is added. `affected` shares the same read behavior.
+
+`receipt.verification` exposes `sourceReads` (guarded snapshot attempts, including refused attempts), `sources` (unique requested provider/source pairs), `checked`, `canceled`, `recordedItems`, `skippedItems`, and `foreignItems`. These counts cover the enumerated check, including rows omitted by the output budget. Missing, racing or ambiguous evidence makes `sourceComplete:false`. `complete` additionally requires no omitted rows. Source races return typed row `code` and `remedy` values with no mixed-revision fragments.
+
+Cancellation through an SDK `AbortSignal`, or SIGINT/SIGTERM while the CLI check is active, returns an explicit incomplete receipt, including when an adapter ignores its signal. Unstarted citation rows carry `code:canceled`; original retained replay never makes source verification complete. Checks canceled during source reading do not record observations. Cancellation during recording may leave committed observations, counted in `recordedItems`. A peer revision change skips that item's observation and makes the receipt incomplete (`skippedItems`); unknown or malformed foreign evidence is preserved and counted in `foreignItems`. `receipt.verification.refusal` supplies a typed reason and remedy for canceled or skipped work. Re-read and retry skipped/foreign items after inspecting their owner/schema.
+
+The shared strict SDK/CLI boundary rejects unknown options, sparse arrays, duplicate adapter providers, non-finite numbers and out-of-domain bounds before source reads. Explicit scopes and citation checks are capped at 10,000; adapters at 64; retained snapshots at 64 MiB per invocation. Sources default to 1 MiB and 5 seconds each; `--max-bytes`/`maxBytes` allow 1–16,777,216 bytes and `--timeout-ms`/`timeoutMs` allow 1–60,000 milliseconds. Budgets allow 1–1,000,000 estimated tokens. Split oversized checks into batches; increase per-source bounds only for authorized sources.
+
+```ts
+import { check } from 'pm-evidence';
+import type { VerificationReceipt } from 'pm-evidence';
+
+const controller = new AbortController();
+const result = await check(['decision-id'], {
+  workspace: '.agents/pm', root: '.', record: false,
+  budget: 800, signal: controller.signal,
+});
+const reads: VerificationReceipt | undefined = result.receipt.verification;
+console.log(reads?.sourceReads, result.receipt.complete);
+```
+
+See [the runnable example](examples/coalesced.ts). Coalescing applies to existing `check` and `affected` APIs and commands; cite, retained replay and review contracts remain available.
+
 `affected` rechecks evidence and includes changed or unresolved evidence; it never invalidates Decisions. Repeat `--changed` to restrict relative source identities. Unknown sources or traversal bounds make its completeness receipt false. Output omission counts cover enumerated rows only; undiscovered graph nodes have unknown counts. The default depth is 2. A receipt always states returned and omitted rows; do not treat a budget-limited result as exhaustive.
 
 Review dispositions are `still-valid`, `re-anchored`, `superseded`, `invalid`. The reason is required. Re-anchoring follows the unique exact current fragment and adds a separate citation; the original stays intact. To repair an ambiguous anchor, pass an explicit replacement `--lines`, `--heading` or `--pointer` selector with the re-anchored disposition. `--expected-revision` can require the evidence revision returned by show. Distinct reviewers cannot overwrite each other's observations; identical retries deduplicate. Other dispositions record the review without silently rewriting evidence.

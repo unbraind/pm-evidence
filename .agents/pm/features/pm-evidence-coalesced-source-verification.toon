@@ -1,0 +1,61 @@
+id: pm-evidence-coalesced-source-verification
+title: Verify shared citation sources once per check
+description: "Coalesce source reads within an evidence check, preserving immutable provider-authorized snapshots and exposing counts without a persistent cache or new source authority."
+type: Feature
+status: in_progress
+priority: 2
+tags[2]: backlog-1021,coalesced-source
+created_at: "2026-10-25T22:24:41.473Z"
+updated_at: "2026-10-25T22:55:29.349Z"
+assignee: codex-agent
+claim_principal: codex-agent
+author: codex-agent
+acceptance_criteria: "Fifty citations into one unchanged document require one source read; A document changing during read never produces mixed revisions; Cancellation produces an explicit incomplete receipt; Typed SDK and compact TOON/JSON CLI, strict boundary validation, no-git real-data proof, npm and Bun CI release gates"
+comments[4]{created_at,author,text}:
+  "2026-10-25T22:24:46.064Z",codex-agent,"Overlap recheck: src/evidence.ts check and affected currently call checkCitation per citation; src/sources.ts provides coherent bounded snapshots but no per-check reuse. The pinned core item-metadata-cache stores native item metadata, not caller source bytes. Sibling pm-context file-focus and pm-brief consume tracker items and linked-file focus, without source-fragment snapshot authority. Existing SDK-adoption work owns output accounting and is reused. No duplicate coalescing item exists. Implement invocation-local provider/source snapshot promises (including refusals), preserve root/adapter authority, expose source reads and cancellation in budgeted receipts, and keep observations behind fresh SDK CAS checks. No import/export/sync, durable cache, status classification or journal is introduced."
+  "2026-10-25T22:37:50.232Z",codex-agent,"Implemented invocation-local provider/source snapshot sharing in check and affected, immutable adapter copies, prompt cancellation with incomplete receipts, strict option bounds, guarded source-read counts, and revision-fenced recording. First targeted source/command/regression run: 28 passed. Eight package lifecycle interleavings preserved peer reviews on real non-git trackers; cancellation and foreign-state recording controls are being finalized. Public pm-changelog snapshot fa8a8a1d0af97797e6a34a78bdd6b9b30242378e: 197 items, 50 citations across 5 items into one 27794-byte document, exactly 1 source read, all 50 current. Bounded 800-token SDK check: 751 estimated tokens, 5 returned, 45 omitted; native CLI TOON 1800 bytes/450 estimated tokens and JSON 3002 bytes/751 estimated tokens. All 405 copied public files unchanged after read-only checks; no git executable available. No hosted or original tracker data was modified."
+  "2026-10-25T22:51:51.863Z",codex-agent,"State model passed: seed 0x5eeda11, 500 four-operation sequences, 2000 operations, 6 exact-byte citation variants, 26 evidence revisions and 500 SDK readbacks preserving 20 native fields plus links, comments and relationships. Targeted linked test command passed 14/14 via pm test --run --progress; the tracker disables automatic result retention, so this comment preserves the receipt. Additional controls cover same-counter envelope replays, native-revision transaction identities and CLI cancellation listener cleanup. Function-only behavioral reverts against origin/main each produced exactly one failing regression: check, snapshot, packet, Store.mutate and Store.commit (5/5 controls), with every source byte restored. No import/export/sync path, journaled plan, shared lease, checkpoint or status-name classification is introduced. Existing SDK transactions, complete-list certification, native get, status-compatible items, RelationshipGraph, history verification and output-accounting helpers remain the authorities. CI now invokes the exact npm release:check script on Node 22 and 26 and the exact Bun release:check script on Node 26; all existing thresholds stay unchanged. Full gates will run in CI to avoid the saturated host."
+  "2026-10-25T22:55:29.349Z",codex-agent,"Confirmed overlap against the installed current 2026.10.25 CLI as well as the pinned 2026.10.23 SDK: no source-snapshot/coalescing/citation API is exported by the current SDK, and item-metadata-cache still owns native item metadata and linked collections only. The package pin is unchanged. A final targeted control also proves that changes to caller-owned options during a read cannot redirect tracker writes, source roots, adapter authority or output bounds. Local typecheck, lint, zero-duplication and complete-docstring gates pass; documentation includes the stable public-data measurements and five behavioral revert controls."
+files[16]:
+  - path: .github/workflows/ci.yml
+    scope: project
+    note: Explicit npm and Bun release scripts in CI
+  - path: index.ts
+    scope: project
+    note: Typed SDK exports
+  - path: src/commands.ts
+    scope: project
+  - path: src/core.ts
+    scope: project
+  - path: src/evidence.ts
+    scope: project
+  - path: src/json-spans.ts
+    scope: project
+  - path: src/selectors.ts
+    scope: project
+  - path: src/sources.ts
+    scope: project
+  - path: src/store.ts
+    scope: project
+  - path: src/types.ts
+    scope: project
+  - path: src/verification.ts
+    scope: project
+  - path: test/coalesced-model.test.ts
+    scope: project
+  - path: test/coalesced-races.test.ts
+    scope: project
+  - path: test/coalesced-real-data.acceptance.ts
+    scope: project
+  - path: test/coalesced-revert.acceptance.ts
+    scope: project
+  - path: test/coalesced.test.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,pm_context_mode,workspace_context_mode,provenance{author,created_at,source_kind,source_ref}}:
+  node --test --test-concurrency=1 test/coalesced.test.ts test/coalesced-races.test.ts,project,600,schema,source,codex-agent,"2026-10-25T22:46:58.343Z",local_mutation,feat/coalesced-source-verification
+docs[4]{path,scope,note}:
+  ARCHITECTURE.md,project,Snapshot authority and revision fences
+  docs/real-data.md,project,Measured public snapshot validation
+  examples/coalesced.ts,project,Read-only SDK example
+  README.md,project,Coalesced verification contract
+body: ""

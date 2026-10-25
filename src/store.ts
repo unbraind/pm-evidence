@@ -44,18 +44,18 @@ export class Store {
     if (!verification.ok) throw new EvidenceError('integrity', 'Evidence history integrity verification failed', 'Check pm health and restore verified history before retrying');
     const encoded = JSON.stringify(value);
     const files = [...new Set(value.citations.filter(entry => ['file', 'json'].includes(entry.descriptor.provider)).map(entry => entry.descriptor.source))].map(source => `path: ${source}\nscope: project\nnote: pm-evidence source identity relative to caller-selected root`);
-    await commitItemMutations({ pmRoot: this.options.workspace, author: await this.author(), transactionId: `evidence-${digest(JSON.stringify([id, raw, encoded, observation]))}`, lockWaitMs: 10_000, mutations: [{ op: 'update', id, match: raw === undefined ? { key: 'updated_at', value: expectedUpdatedAt } : { key: 'evidence_state', value: raw }, options: { evidenceState: encoded, file: files, comment: [observation] } }] });
+    await commitItemMutations({ pmRoot: this.options.workspace, author: await this.author(), transactionId: `evidence-${digest(JSON.stringify([id, expectedUpdatedAt, raw, encoded, observation]))}`, lockWaitMs: 10_000, mutations: [{ op: 'update', id, match: raw === undefined ? { key: 'updated_at', value: expectedUpdatedAt } : { key: 'evidence_state', value: raw }, options: { evidenceState: encoded, file: files, comment: [observation] } }] });
   }
   /** Retry a bounded CAS mutation against fresh state, retaining other writers' records. */
-  async mutate<T>(id: string, action: (value: EvidenceState) => { value: T; observation: string } | undefined, expectedRevision?: number): Promise<T | undefined> {
+  async mutate<T>(id: string, action: (value: EvidenceState) => { value: T; observation: string } | undefined, expectedRevision?: number, expectedRaw?: unknown): Promise<T | undefined> {
     await this.register();
     for (let attempt = 0; attempt < 8; attempt++) {
       const current = await this.get(id);
-      if (expectedRevision !== undefined && expectedRevision !== current.value.revision) throw new EvidenceError('conflict', 'Expected evidence revision changed', 'Read evidence show and retry with its current revision');
+      if ((expectedRevision !== undefined && expectedRevision !== current.value.revision) || (expectedRaw !== undefined && expectedRaw !== current.raw)) throw new EvidenceError('conflict', 'Expected evidence revision changed', 'Read evidence show and retry with its current revision');
       const change = action(current.value); if (change === undefined) return undefined;
       current.value.revision++;
       try { await this.commit(current.item.id, current.raw, current.value, change.observation, current.item.updated_at); return change.value; }
-      catch (error) { if (!String(error).includes('upsert_match_changed') && !String(error).includes('no longer carries upsert key')) throw new EvidenceError('sdk', 'SDK evidence mutation failed', 'Check pm health and retry the observation'); }
+      catch (error) { if (error instanceof EvidenceError) throw error; if (!String(error).includes('upsert_match_changed') && !String(error).includes('no longer carries upsert key')) throw new EvidenceError('sdk', 'SDK evidence mutation failed', 'Check pm health and retry the observation'); }
     }
     throw new EvidenceError('conflict', 'Concurrent evidence writers exhausted retries', 'Retry after competing writes complete');
   }

@@ -1,8 +1,9 @@
 /** Function-only historical and guard reverts; development proof harness requires this Git repository. */
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { expectBehavioralFailure } from './revert-control.ts';
 
 /** One immutable-target behavioral revert and its isolated positive regression. */
 interface RevertCase { name: string; file: string; target: string; mutation: string; test: string; suite?: string }
@@ -32,8 +33,7 @@ for (const proof of process.argv.includes('--review') ? cases.slice(3) : cases) 
   const original = await readFile(proof.file, 'utf8'); assert.equal(original.split(proof.target).length, 2);
   try {
     await writeFile(proof.file, original.replace(proof.target, proof.mutation));
-    const result = spawnSync(process.execPath, ['--test', '--test-reporter=tap', '--test-name-pattern', `^${proof.test}$`, proof.suite ?? 'test/evidence.test.ts'], { encoding: 'utf8', timeout: 120000 });
-    assert.equal(result.error, undefined); assert.equal(result.status, 1, result.stdout + result.stderr); assert.match(result.stdout, /# fail 1/);
+    expectBehavioralFailure(proof.suite ?? 'test/evidence.test.ts', `^${proof.test}$`);
     console.log(JSON.stringify({ guard: proof.name, negativeControl: 'fail 1', functionScopeOnly: true, sourceImports: true, originalSha256: createHash('sha256').update(original).digest('hex') }));
   } finally { await writeFile(proof.file, original); assert.equal(await readFile(proof.file, 'utf8'), original); }
 }
