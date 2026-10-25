@@ -1,16 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { cite, check, review, show, affected } from '../index.ts';
-import { digest } from '../src/core.ts';
 import { tracker } from './helpers.ts';
 import type { EvidenceState, CheckRow } from '../src/types.ts';
 
 /** Deterministic xorshift generator; every failure reports a reproducible sequence index. */
 function random(seed: number): () => number { let value = seed; return () => { value ^= value << 13; value ^= value >>> 17; value ^= value << 5; return value >>> 0; }; }
 /** Reference model stores exact input bytes and logical operation identities without normalization. */
-interface ModelCitation { revision: string; retained: boolean; reviews: Set<string>; lastCheck?: CheckRow }
+interface ModelCitation { text: string; revision: string; retained: boolean; reviews: Set<string>; lastCheck?: CheckRow }
+/** Compute exact expected bytes independently of the package's hashing implementation. */
+function sha256(text: string): string { return createHash('sha256').update(text).digest('hex'); }
+/** Generated timestamps must retain the SDK's exact ISO representation. */
+function timestamp(value: unknown): void { assert.ok(typeof value === 'string'); assert.match(value, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/); assert.ok(Number.isFinite(Date.parse(value))); }
 
 test('500 seeded operation sequences preserve SDK-read state through old-input replay and exact whitespace variants', async t => {
   const f = await tracker(t); const next = random(0x5eeda11);
@@ -34,7 +38,7 @@ test('500 seeded operation sequences preserve SDK-read state through old-input r
         const retained = (next() & 1) === 1;
         const result = await cite(f.item, 'policy.json', { ...options, selector: { kind: 'pointer', pointer: '' }, retain: retained });
         const previous = model.get(result.citation);
-        if (previous === undefined) { model.set(result.citation, { revision: digest(input), retained, reviews: new Set() }); revision++; comments.push(`evidence cite ${result.citation}`); }
+        if (previous === undefined) { model.set(result.citation, { text: input, revision: sha256(input), retained, reviews: new Set() }); revision++; comments.push(`evidence cite ${result.citation}`); }
         else if (retained && !previous.retained) { previous.retained = true; revision++; comments.push(`evidence retain ${result.citation}`); }
       } else if (operation === 1) {
         const citation = [...model.keys()][next() % model.size];
@@ -46,26 +50,30 @@ test('500 seeded operation sequences preserve SDK-read state through old-input r
         const record = sequence < 10;
         const result = await check([f.item], { ...options, record });
         assert.equal(result.receipt.verification?.sourceReads, 1);
-        for (const row of result.rows) { const expected = model.get(row.citation)!; assert.equal(row.currentRevision, digest(input)); assert.equal(row.oldDigest, expected.revision); assert.equal(row.currentDigest, digest(input)); assert.equal(row.freshness, expected.revision === digest(input) ? 'current' : 'changed'); if (record) expected.lastCheck = row; }
+        for (const row of result.rows) { const expected = model.get(row.citation)!; assert.equal(row.currentRevision, sha256(input)); assert.equal(row.oldDigest, expected.revision); assert.equal(row.currentDigest, sha256(input)); assert.equal(row.freshness, expected.revision === sha256(input) ? 'current' : 'changed'); if (record) expected.lastCheck = row; }
         if (record) { revision++; comments.push('evidence check: compact status observation'); }
       } else if (operation === 3) await show(f.item, options);
       else await affected({ ...options, changed: ['policy.json'], depth: next() % 4 });
     }
     const item = (await f.client.get(f.item, { full: true })).item;
     const saved = JSON.parse(String(item.evidence_state)) as EvidenceState;
-    assert.equal(saved.revision, revision, `sequence ${sequence}`); assert.equal(saved.citations.length, model.size);
+    assert.equal(saved.version, 1); assert.equal(saved.revision, revision, `sequence ${sequence}`); assert.equal(saved.citations.length, model.size); timestamp(item.updated_at);
     for (const citation of saved.citations) {
       const expected = model.get(citation.id)!; assert.ok(expected);
-      assert.equal(citation.descriptor.provider, 'json'); assert.equal(citation.descriptor.source, 'policy.json'); assert.equal(citation.descriptor.revision, expected.revision); assert.equal(citation.fragmentDigest, expected.revision);
-      assert.deepEqual(citation.descriptor.selector, { kind: 'pointer', pointer: '' }); assert.equal(citation.descriptor.jsonEncoding, 'source-bytes-v1');
-      assert.equal(citation.retained !== undefined, expected.retained); if (citation.retained !== undefined) assert.equal(digest(Buffer.from(citation.retained, 'base64').toString('utf8')), expected.revision);
-      assert.deepEqual(new Set(citation.reviews.map(entry => entry.id)), expected.reviews);
-      assert.deepEqual(citation.lastCheck, expected.lastCheck); assert.equal(citation.provenance.item, f.item); assert.equal(citation.provenance.author, 'fixture');
+      assert.deepEqual(citation.descriptor, { provider: 'json', source: 'policy.json', revision: expected.revision, selector: { kind: 'pointer', pointer: '' }, jsonEncoding: 'source-bytes-v1' }); assert.equal(citation.fragmentDigest, expected.revision);
+      assert.equal(citation.retained !== undefined, expected.retained); if (citation.retained !== undefined) assert.equal(Buffer.from(citation.retained, 'base64').toString('utf8'), expected.text);
+      assert.equal(citation.reviews.length, expected.reviews.size); assert.deepEqual(new Set(citation.reviews.map(entry => entry.id)), expected.reviews);
+      for (const observation of citation.reviews) { assert.deepEqual({ author: observation.author, disposition: observation.disposition, reason: observation.reason, replacement: observation.replacement }, { author: 'fixture', disposition: 'still-valid', reason: 'Seeded repeated review', replacement: undefined }); timestamp(observation.at); }
+      assert.deepEqual(citation.lastCheck, expected.lastCheck); assert.equal(citation.lastCheckedAt !== undefined, expected.lastCheck !== undefined); if (citation.lastCheckedAt !== undefined) timestamp(citation.lastCheckedAt);
+      assert.deepEqual(Object.keys(citation.provenance).sort(), ['at', 'author', 'item']); assert.equal(citation.provenance.item, f.item); assert.equal(citation.provenance.author, 'fixture'); timestamp(citation.provenance.at);
     }
     assert.deepEqual(item.comments?.map(entry => entry.text), comments, `comments at sequence ${sequence}`);
+    assert.deepEqual(item.comments?.slice(0, baseline.comments?.length), baseline.comments);
+    for (const comment of item.comments?.slice(baseline.comments?.length) ?? []) { assert.equal(comment.author, 'fixture'); timestamp(comment.created_at); }
     assert.deepEqual(item.files, [...baseline.files ?? [], { path: 'policy.json', scope: 'project', note: 'pm-evidence source identity relative to caller-selected root' }]);
     assert.deepEqual(item.collection_counts, { ...baseline.collection_counts, comments: comments.length, files: (baseline.files?.length ?? 0) + 1 });
     for (const key of stableKeys) assert.deepEqual(item[key], baseline[key], `native ${key} at sequence ${sequence}`);
   }
+  assert.equal(model.size, inputs.length, 'Every exact-byte variant must remain distinct');
   t.diagnostic(`seed=0x5eeda11; sequences=500; operations=2000; citations=${model.size}; evidence revisions=${revision}; SDK readbacks=500; native fields=${stableKeys.length}`);
 });
