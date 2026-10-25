@@ -16,13 +16,16 @@ const cases = [
   { file: 'src/core.ts', name: 'packet', suite: 'test/coalesced.test.ts', test: '^fifty citations across items' },
   { file: 'src/store.ts', name: 'mutate', method: true, suite: 'test/coalesced-races.test.ts', test: '^replayed envelopes with the same numeric revision' },
   { file: 'src/store.ts', name: 'commit', method: true, suite: 'test/coalesced-races.test.ts', test: '^idempotency keys bind identical evidence payloads' },
+  { file: 'src/evidence.ts', name: 'check', lateCapture: true, suite: 'test/coalesced-races.test.ts', test: '^target envelope is captured before source awaits' },
 ];
 for (const proof of cases) {
   const original = await readFile(proof.file, 'utf8'); const baseline = execFileSync('git', ['show', `origin/main:${proof.file}`], { encoding: 'utf8' });
-  const changed = original.replace(body(original, proof.name, proof.method), body(baseline, proof.name, proof.method)); assert.notEqual(changed, original);
+  const current = body(original, proof.name, proof.method);
+  const replacement = proof.lateCapture === true ? current.replace('raw, rows: itemRows', 'raw: item.evidence_state, rows: itemRows') : body(baseline, proof.name, proof.method);
+  const changed = original.replace(current, replacement); assert.notEqual(changed, original);
   try {
     await writeFile(proof.file, changed);
     expectBehavioralFailure(proof.suite, proof.test);
-    console.log(JSON.stringify({ function: proof.name, negativeControl: 'fail 1', behaviorOnly: true, sourceImports: true }));
+    console.log(JSON.stringify({ function: proof.name, guard: proof.lateCapture === true ? 'pre-await target envelope' : 'whole function baseline', negativeControl: 'fail 1', behaviorOnly: true, sourceImports: true }));
   } finally { await writeFile(proof.file, original); assert.equal(await readFile(proof.file, 'utf8'), original); }
 }

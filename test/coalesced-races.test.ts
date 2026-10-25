@@ -6,7 +6,8 @@ import { commitItemMutations } from '@unbrained/pm-cli/sdk';
 import type { CommandHandlerContext } from '@unbrained/pm-cli/sdk/authoring';
 import { check, cite, review } from '../index.ts';
 import { runCommand } from '../src/commands.ts';
-import type { CheckRow, Packet } from '../index.ts';
+import type { CheckRow, Packet, SourceAdapter } from '../index.ts';
+import { readFileSnapshot } from '../src/sources.ts';
 import { Store } from '../src/store.ts';
 import { tracker, citedTracker } from './helpers.ts';
 
@@ -103,4 +104,21 @@ test('idempotency keys bind identical evidence payloads to the current native ta
   const replayed = await store.get(f.item); assert.equal(replayed.raw, original.raw); assert.notEqual(replayed.item.updated_at, original.item.updated_at);
   await store.commit(f.item, replayed.raw, target, 'Revision-bound retry', replayed.item.updated_at);
   assert.deepEqual((await store.get(f.item)).value, target);
+});
+
+test('target envelope is captured before source awaits even if an SDK result view refreshes in place', async t => {
+  const f = await citedTracker(t); const store = new Store(f.options); const originalAll = Store.prototype.all;
+  let selected: Awaited<ReturnType<Store['all']>> = [];
+  Store.prototype.all = async function () { selected = await originalAll.call(this); return selected; };
+  const adapter: SourceAdapter = { provider: 'file', read: async (source, context) => {
+    const current = await store.get(f.item); current.value.citations[0].provenance.author = 'peer';
+    await store.commit(f.item, current.raw, current.value, 'Synthetic result-view refresh', current.item.updated_at);
+    Object.assign(selected.find(item => item.id === f.item)!, { evidence_state: (await store.get(f.item)).raw });
+    return readFileSnapshot(source, context);
+  } };
+  try {
+    const result = await check([], { ...f.options, adapters: [adapter] });
+    assert.equal(result.receipt.verification?.recordedItems, 0); assert.equal(result.receipt.verification?.skippedItems, 1); assert.equal(result.receipt.complete, false);
+    assert.equal((await store.get(f.item)).value.citations[0].lastCheck, undefined);
+  } finally { Object.assign(Store.prototype, { all: originalAll }); }
 });

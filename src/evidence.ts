@@ -54,12 +54,13 @@ export async function check(items: readonly string[] = [], options: CheckOptions
   requireInput(selected.length <= 10_000, 'Check scope exceeds 10000 items; select a smaller batch');
   const rows: CheckRow[] = []; const observed: { item: string; revision: number; raw: unknown; rows: CheckRow[] }[] = [];
   for (const item of selected) {
-    const value = verificationState(item.evidence_state, verification, item.id);
+    const raw = item.evidence_state;
+    const value = verificationState(raw, verification, item.id);
     if (value === undefined) continue;
     requireInput(rows.length + value.citations.length <= 10_000, 'Check scope exceeds 10000 citations; select a smaller batch');
     const itemRows: CheckRow[] = [];
     for (const citation of value.citations) { const row = await checkCitation(citation, settings, verification); rows.push(row); itemRows.push(row); if (row.code !== 'canceled') verification.receipt.checked++; }
-    if (value.citations.length > 0) observed.push({ item: item.id, revision: value.revision, raw: item.evidence_state, rows: itemRows });
+    if (value.citations.length > 0) observed.push({ item: item.id, revision: value.revision, raw, rows: itemRows });
   }
   if (settings.record !== false && !verification.canceled()) for (const observation of observed) {
     if (verification.canceled()) { verification.receipt.skippedItems++; continue; }
