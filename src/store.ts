@@ -1,4 +1,4 @@
-import { certifyCompleteListResult, commitItemMutations, PmClient, readSettings, selectImportAuthor } from '@unbrained/pm-cli/sdk';
+import { certifyCompleteListResult, commitItemMutations, getHistoryPath, PmClient, readHistoryEntries, readSettings, selectImportAuthor, verifyHistoryEntries } from '@unbrained/pm-cli/sdk';
 import type { GetResult, PmCompleteListResult } from '@unbrained/pm-cli/sdk';
 import type { SchemaFieldDefinition } from '@unbrained/pm-cli/sdk/authoring';
 import type { Citation, EvidenceOptions, EvidenceState } from './types.ts';
@@ -40,6 +40,8 @@ export class Store {
   async get(id: string): Promise<{ item: GetResult['item']; value: EvidenceState; raw: unknown }> { const item = (await this.client.get(id, { full: true })).item; return { item, value: state(item.evidence_state), raw: item.evidence_state }; }
   /** Commit with a lock-held SDK field precondition; no raw tracker file writes. */
   async commit(id: string, raw: unknown, value: EvidenceState, observation: string, expectedUpdatedAt?: string): Promise<void> {
+    const verification = verifyHistoryEntries(await readHistoryEntries(getHistoryPath(this.options.workspace, id), id));
+    if (!verification.ok) throw new EvidenceError('integrity', 'Evidence history integrity verification failed', 'Check pm health and restore verified history before retrying');
     const encoded = JSON.stringify(value);
     const files = [...new Set(value.citations.filter(entry => ['file', 'json'].includes(entry.descriptor.provider)).map(entry => entry.descriptor.source))].map(source => `path: ${source}\nscope: project\nnote: pm-evidence source identity relative to caller-selected root`);
     await commitItemMutations({ pmRoot: this.options.workspace, author: await this.author(), transactionId: `evidence-${digest(JSON.stringify([id, raw, encoded, observation]))}`, lockWaitMs: 10_000, mutations: [{ op: 'update', id, match: raw === undefined ? { key: 'updated_at', value: expectedUpdatedAt } : { key: 'evidence_state', value: raw }, options: { evidenceState: encoded, file: files, comment: [observation] } }] });
