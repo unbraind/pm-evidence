@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFile, mkdtemp, mkdir, readFile, rm, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 
@@ -15,8 +15,12 @@ try {
   const source = execFileSync('git', ['archive', 'origin/main', 'src', 'index.ts', 'tsconfig.json', 'package.json'], { maxBuffer: 16 * 1024 * 1024 });
   execFileSync('tar', ['-x', '-C', baseline], { input: source });
   await symlink(join(packageRoot, 'node_modules'), join(baseline, 'node_modules'), 'dir');
-  await mkdir(join(baseline, 'test'));
-  await copyFile(join(packageRoot, 'test', 'sdk-differential-runner.ts'), join(baseline, 'test', 'sdk-differential-runner.ts'));
+  const candidate = join(root, 'candidate'); await mkdir(candidate);
+  await symlink(join(packageRoot, 'dist'), join(candidate, 'dist'), 'dir');
+  await symlink(join(packageRoot, 'node_modules'), join(candidate, 'node_modules'), 'dir');
+  await writeFile(join(candidate, 'package.json'), '{"type":"module"}');
+  const worker = (await readFile(join(packageRoot, 'test', 'sdk-differential-runner.ts'), 'utf8')).replace("'../index.ts'", "'../dist/index.js'").replace("'../src/core.ts'", "'../dist/src/core.js'");
+  for (const build of [baseline, candidate]) { await mkdir(join(build, 'test')); await writeFile(join(build, 'test', 'sdk-differential-runner.ts'), worker); }
   execFileSync(process.execPath, [join(packageRoot, 'node_modules', 'typescript', 'bin', 'tsc'), '-p', join(baseline, 'tsconfig.json')]);
   for (const [index, repository] of repositories.entries()) {
     const head = execFileSync('git', ['rev-parse', 'origin/main'], { cwd: repository, encoding: 'utf8' }).trim();
@@ -29,7 +33,7 @@ try {
     const hashes = await Promise.all(files.map(async file => createHash('sha256').update(await readFile(join(copy, file))).digest('hex')));
     const env = { ...process.env, PATH: '', GIT_CEILING_DIRECTORIES: dirname(root), PM_AUTHOR: 'fixture' };
     assert.notEqual(spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: copy, env: { ...env, PATH: process.env.PATH } }).status, 0);
-    const results = [baseline, packageRoot].map(build => JSON.parse(execFileSync(process.execPath, [join(build, 'test', 'sdk-differential-runner.ts'), join(copy, '.agents', 'pm')], { cwd: copy, env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })) as { items: number; comparisons: number; outputs: unknown[] });
+    const results = [baseline, candidate].map(build => JSON.parse(execFileSync(process.execPath, [join(build, 'test', 'sdk-differential-runner.ts'), join(copy, '.agents', 'pm')], { cwd: copy, env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })) as { items: number; comparisons: number; outputs: unknown[] });
     assert.deepEqual(results[1], results[0]);
     assert.deepEqual(await Promise.all(files.map(async file => createHash('sha256').update(await readFile(join(copy, file))).digest('hex'))), hashes);
     console.log(JSON.stringify({ repository: identity.match(/unbraind\/pm-[\w-]+/)![0].replace(/\.git$/, ''), head, baselineHead, items: results[0].items, comparisons: results[0].comparisons, identical: true, intentionalDifferences: [], sourceFilesUnchanged: files.length, noGit: true }));

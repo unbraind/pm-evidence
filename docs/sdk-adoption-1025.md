@@ -12,7 +12,7 @@ Missing SDK capability: a caller-supplied final-envelope estimator with lossless
 
 ## Compiled differential
 
-Run `npm run build`, then `node test/sdk-differential.acceptance.ts <public-evidence-checkout> <public-changelog-checkout>`. The harness builds the package's `origin/main`, archives each public tracker's `origin/main`, executes both compiled implementations with no git executable and fenced ancestor discovery, and compares exact results and refusals. Every copied tracked file is hashed before and after. Only disposable copies can acquire derived runtime indexes; no tracker items, history or source files change. Original checkouts are read-only inputs.
+Run `npm run build`, then `node test/sdk-differential.acceptance.ts <public-evidence-checkout> <public-changelog-checkout>`. The harness builds the package's `origin/main`, archives each public tracker's `origin/main`, executes both compiled implementations with no git executable and fenced ancestor discovery, and compares exact results and refusals. The checked-in worker imports source so typecheck works before a build; the harness rewrites only disposable workers to import the two compiled builds. Every copied tracked file is hashed before and after. Only disposable copies can acquire derived runtime indexes; no tracker items, history or source files change. Original checkouts are read-only inputs.
 
 | Public corpus | Source head | Items | Comparisons | Unchanged source files |
 | --- | --- | ---: | ---: | ---: |

@@ -1,8 +1,8 @@
 /** Read-only compiled-package differential worker; runs with no git executable. */
 import { readFile } from 'node:fs/promises';
 import { PmClient, certifyCompleteListResult } from '@unbrained/pm-cli/sdk';
-import { affected, check } from '../dist/index.js';
-import { packet, tokens } from '../dist/src/core.js';
+import { affected, check } from '../index.ts';
+import { packet, tokens } from '../src/core.ts';
 
 const workspace = process.argv[2];
 const client = new PmClient({ pmRoot: workspace, noExtensions: true });
