@@ -4,6 +4,32 @@ Project management = context management. Agents justify Decisions, closes and ha
 
 This is an unreleased package under local review. Publication requires maintainer approval. The examples below work with a locally packed tarball; registry installs become available after approval.
 
+## Install and release approval
+
+The first npm release is pending the maintainer's interactive bootstrap. After
+that first publish, the maintainer configures npm trusted publishing for
+`release.yml` and sets the repository variable `PM_RELEASE_APPROVED` to `true`.
+The daily workflow and manual dispatch both require this variable and `main`.
+Publishing uses OIDC with provenance; no stored npm token is needed.
+
+Once published, install the package and compatible pm host, then activate the
+extension in an initialized pm project:
+
+```sh
+npm install pm-evidence @unbrained/pm-cli
+npx --no-install pm package install ./node_modules/pm-evidence
+
+bun add pm-evidence @unbrained/pm-cli
+bunx --bun --no-install pm package install ./node_modules/pm-evidence
+
+pm package install npm:pm-evidence
+pm evidence --help
+```
+
+The package exports its SDK through `main` and `types` and registers commands
+with pm. It has no standalone `bin`: use `npx pm` or `bunx --bun pm` through
+the installed host. npm/Bun dependency installation alone does not activate it.
+
 ## Install
 
 Requires Node 22.18+ and pm 2026.10.23+. Built-in file/JSON reads require Linux with accessible procfs descriptor links and fail closed on unsupported platforms; no weaker path-only mode is enabled. From this checkout:
