@@ -60,7 +60,7 @@ test('adapter deadlines, abort, size bounds and digest revision mismatches refus
   await assert.rejects(snapshot('custom', 'source', { workspace, maxBytes: 1, adapters: [{ provider: 'custom', read: async () => ({ text: 'long', revision: digest('long') }) }] }));
   const valid = await snapshot('custom', 'source', { workspace, adapters: [{ provider: 'custom', read: async () => ({ text: 'text', revision: digest('text') }) }] }); assert.equal(valid.text, 'text');
   await assert.rejects(snapshot('custom', 'source', { workspace, timeoutMs: 5, adapters: [{ provider: 'custom', read: async () => new Promise(() => {}) }] }), /deadline/);
-  await assert.rejects(snapshot('file', 'source', { workspace, signal: AbortSignal.abort() }), /coherently/);
+  await assert.rejects(snapshot('file', 'source', { workspace, signal: AbortSignal.abort() }), { code: 'canceled' });
 });
 
 test('adapter failures do not expose raw exception values or native diagnostics', async () => {

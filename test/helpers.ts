@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { TestContext } from 'node:test';
 import { PmClient } from '@unbrained/pm-cli/sdk';
+import { cite } from '../index.ts';
 
 /** Every fixture is a real SDK tracker outside git, with disposable synthetic sources. */
 export async function tracker(t: TestContext) {
@@ -13,6 +14,12 @@ export async function tracker(t: TestContext) {
   await client.create({ id: 'evidence-test-decision', type: 'Decision', title: 'Synthetic evidence decision' });
   const item = 'evidence-test-decision'; const options = { workspace, root, author: 'fixture' };
   return { root, workspace, client, item, options };
+}
+/** Minimal genuine citation fixture shared by read, cancellation and peer-transition controls. */
+export async function citedTracker(t: TestContext) {
+  const fixture = await tracker(t); await writeFile(join(fixture.root, 'doc.md'), 'Claim');
+  const citation = await cite(fixture.item, 'doc.md', { ...fixture.options, selector: { kind: 'lines', start: 1, end: 1 } });
+  return { ...fixture, citation };
 }
 /** Install native host discovery without changing the package's own tracker. */
 export async function extension(workspace: string) {

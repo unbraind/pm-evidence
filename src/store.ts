@@ -1,20 +1,16 @@
 import { certifyCompleteListResult, commitItemMutations, getHistoryPath, PmClient, readHistoryEntries, readSettings, selectImportAuthor, verifyHistoryEntries } from '@unbrained/pm-cli/sdk';
 import type { GetResult, PmCompleteListResult } from '@unbrained/pm-cli/sdk';
 import type { SchemaFieldDefinition } from '@unbrained/pm-cli/sdk/authoring';
-import type { Citation, EvidenceOptions, EvidenceState } from './types.ts';
-import { digest, EvidenceError, requireInput } from './core.ts';
+import type { Citation, CheckRow, EvidenceOptions, EvidenceState } from './types.ts';
+import { digest, EvidenceError } from './core.ts';
+import { parseCitation, envelope, validateRecord } from './citation-schema.ts';
+import type { EvidenceEnvelope } from './citation-schema.ts';
 
 /** Registered scalar JSON envelope keeps evidence on native items with SDK history. */
 export const FIELDS: SchemaFieldDefinition[] = [{ name: 'evidence_state', type: 'string', optional: true }];
 /** Missing fields have a valid first revision without bootstrapping item writes. */
-export function state(raw: unknown): EvidenceState {
-  if (raw === undefined) return { version: 1, revision: 0, citations: [] };
-  try {
-    const parsed = JSON.parse(String(raw)) as EvidenceState;
-    requireInput(parsed.version === 1 && Number.isSafeInteger(parsed.revision) && parsed.revision >= 0 && Array.isArray(parsed.citations), 'Invalid evidence state');
-    for (const citation of parsed.citations) requireInput(typeof citation.id === 'string' && typeof citation.fragmentDigest === 'string' && Array.isArray(citation.reviews) && citation.descriptor !== undefined, 'Invalid citation');
-    return parsed;
-  } catch { throw new EvidenceError('schema', 'Evidence field is malformed', 'Restore a valid registered evidence_state value through pm'); }
+export function state(raw: unknown, owner?: string): EvidenceState {
+  return validateRecord(envelope(raw), owner);
 }
 /** SDK-only storage, schema, settings and lock-held compare-and-swap operations. */
 export class Store {
@@ -37,25 +33,46 @@ export class Store {
   /** Certify the full item corpus rather than infer completeness from a bounded list. */
   async all(): Promise<PmCompleteListResult['items']> { return certifyCompleteListResult(await this.client.listAllComplete({ includeBody: false })).items; }
   /** Read exact current item metadata and native revision envelope. */
-  async get(id: string): Promise<{ item: GetResult['item']; value: EvidenceState; raw: unknown }> { const item = (await this.client.get(id, { full: true })).item; return { item, value: state(item.evidence_state), raw: item.evidence_state }; }
+  async get(id: string): Promise<{ item: GetResult['item']; value: EvidenceState; raw: unknown }> { const current = await this.getRaw(id); return { ...current, value: state(current.raw, current.item.id) }; }
+  /** Native target read without interpreting individual citation entries. */
+  async getRaw(id: string): Promise<{ item: GetResult['item']; raw: unknown }> { const item = (await this.client.get(id, { full: true })).item; return { item, raw: item.evidence_state }; }
   /** Commit with a lock-held SDK field precondition; no raw tracker file writes. */
-  async commit(id: string, raw: unknown, value: EvidenceState, observation: string, expectedUpdatedAt?: string): Promise<void> {
+  async commit(id: string, raw: unknown, value: EvidenceEnvelope, observation: string, expectedUpdatedAt?: string): Promise<void> {
+    const validated = validateRecord(value, id);
     const verification = verifyHistoryEntries(await readHistoryEntries(getHistoryPath(this.options.workspace, id), id));
     if (!verification.ok) throw new EvidenceError('integrity', 'Evidence history integrity verification failed', 'Check pm health and restore verified history before retrying');
-    const encoded = JSON.stringify(value);
-    const files = [...new Set(value.citations.filter(entry => ['file', 'json'].includes(entry.descriptor.provider)).map(entry => entry.descriptor.source))].map(source => `path: ${source}\nscope: project\nnote: pm-evidence source identity relative to caller-selected root`);
-    await commitItemMutations({ pmRoot: this.options.workspace, author: await this.author(), transactionId: `evidence-${digest(JSON.stringify([id, raw, encoded, observation]))}`, lockWaitMs: 10_000, mutations: [{ op: 'update', id, match: raw === undefined ? { key: 'updated_at', value: expectedUpdatedAt } : { key: 'evidence_state', value: raw }, options: { evidenceState: encoded, file: files, comment: [observation] } }] });
+    const encoded = JSON.stringify(validated);
+    const owned = validated.citations;
+    const files = [...new Set(owned.filter(entry => ['file', 'json'].includes(entry.descriptor.provider)).map(entry => entry.descriptor.source))].map(source => `path: ${source}\nscope: project\nnote: pm-evidence source identity relative to caller-selected root`);
+    await commitItemMutations({ pmRoot: this.options.workspace, author: await this.author(), transactionId: `evidence-${digest(JSON.stringify([id, expectedUpdatedAt, raw, encoded, observation]))}`, lockWaitMs: 10_000, mutations: [{ op: 'update', id, match: raw === undefined ? { key: 'updated_at', value: expectedUpdatedAt } : { key: 'evidence_state', value: raw }, options: { evidenceState: encoded, file: files, comment: [observation] } }] });
   }
   /** Retry a bounded CAS mutation against fresh state, retaining other writers' records. */
-  async mutate<T>(id: string, action: (value: EvidenceState) => { value: T; observation: string } | undefined, expectedRevision?: number): Promise<T | undefined> {
-    await this.register();
+  async mutate<T>(id: string, action: (value: EvidenceState) => { value: T; observation: string } | undefined, expectedRevision?: number, expectedRaw?: unknown): Promise<T | undefined> {
+    return this.mutateValue(id, raw => state(raw, id), action, expectedRevision, expectedRaw);
+  }
+  /** Build compact observations without accepting malformed sibling records for persistence. */
+  async observe(id: string, rows: readonly CheckRow[], expectedRevision: number, expectedRaw: unknown, canceled: () => boolean): Promise<boolean | undefined> {
+    return this.mutateValue(id, envelope, value => {
+      if (canceled() || rows.every(row => row.code === 'schema')) return undefined;
+      for (const [index, row] of rows.entries()) {
+        if (row.code === 'schema') continue;
+        value.citations[index] = { ...parseCitation(value.citations[index], id), lastCheck: { ...row, diff: undefined }, lastCheckedAt: new Date().toISOString() };
+      }
+      return { value: true, observation: 'evidence check: compact status observation' };
+    }, expectedRevision, expectedRaw);
+  }
+  /** Reuse one native CAS/retry path for strict producers and per-entry observation recording. */
+  private async mutateValue<T, S extends EvidenceEnvelope>(id: string, parse: (raw: unknown) => S, action: (value: S) => { value: T; observation: string } | undefined, expectedRevision?: number, expectedRaw?: unknown): Promise<T | undefined> {
+    let registered = false;
     for (let attempt = 0; attempt < 8; attempt++) {
-      const current = await this.get(id);
-      if (expectedRevision !== undefined && expectedRevision !== current.value.revision) throw new EvidenceError('conflict', 'Expected evidence revision changed', 'Read evidence show and retry with its current revision');
+      const target = await this.getRaw(id); const current = { ...target, value: parse(target.raw) };
+      if ((expectedRevision !== undefined && expectedRevision !== current.value.revision) || (expectedRaw !== undefined && expectedRaw !== current.raw)) throw new EvidenceError('conflict', 'Expected evidence revision changed', 'Read evidence show and retry with its current revision');
       const change = action(current.value); if (change === undefined) return undefined;
       current.value.revision++;
+      validateRecord(current.value, current.item.id);
+      if (!registered) { await this.register(); registered = true; continue; }
       try { await this.commit(current.item.id, current.raw, current.value, change.observation, current.item.updated_at); return change.value; }
-      catch (error) { if (!String(error).includes('upsert_match_changed') && !String(error).includes('no longer carries upsert key')) throw new EvidenceError('sdk', 'SDK evidence mutation failed', 'Check pm health and retry the observation'); }
+      catch (error) { if (error instanceof EvidenceError) throw error; if (!String(error).includes('upsert_match_changed') && !String(error).includes('no longer carries upsert key')) throw new EvidenceError('sdk', 'SDK evidence mutation failed', 'Check pm health and retry the observation'); }
     }
     throw new EvidenceError('conflict', 'Concurrent evidence writers exhausted retries', 'Retry after competing writes complete');
   }

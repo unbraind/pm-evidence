@@ -20,7 +20,8 @@
     "LICENSE",
     "CHANGELOG.md",
     "ARCHITECTURE.md",
-    "docs/real-data.md"
+    "docs/real-data.md",
+    "docs/record-validation.md"
   ],
   "scripts": {
     "build": "tsc",
@@ -139,6 +140,7 @@
     }
   },
   "dependencies": {
-    "@toon-format/toon": "^4.4.0"
+    "@toon-format/toon": "^4.4.0",
+    "zod": "4.6.7"
   }
 }

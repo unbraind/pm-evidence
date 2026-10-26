@@ -1,22 +1,21 @@
 /** Read-only public repository evaluation; only the disposable no-git copy is mutated. */
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { PmClient, certifyCompleteListResult } from '@unbrained/pm-cli/sdk';
 import { cite, check, affected, tokens } from '../index.ts';
 import { select } from '../src/selectors.ts';
 import { readFileSnapshot } from '../src/sources.ts';
 import type { SourceAdapter } from '../index.ts';
+import { copyPublicSnapshot } from './public-copy.ts';
 
 const repository = process.argv[2]; assert.ok(repository, 'Pass the public repository checkout');
 const root = await mkdtemp(join(tmpdir(), 'evidence-real-')); const savedPath = process.env.PATH; const started = performance.now();
 try {
   const head = execFileSync('git', ['rev-parse', 'origin/main'], { cwd: repository, encoding: 'utf8' }).trim();
-  const archive = execFileSync('git', ['archive', 'origin/main', '.agents/pm', 'README.md', 'docs/'], { cwd: repository, maxBuffer: 64 * 1024 * 1024 });
-  execFileSync('tar', ['-x', '-C', root], { input: archive });
-  assert.notEqual(spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: root, env: { ...process.env, GIT_CEILING_DIRECTORIES: dirname(root) } }).status, 0);
+  copyPublicSnapshot(repository, root, ['.agents/pm', 'README.md', 'docs/']);
   const sources = execFileSync('git', ['ls-tree', '-r', '--name-only', 'origin/main', 'README.md', 'docs/'], { cwd: repository, encoding: 'utf8' }).trim().split('\n').filter(name => name.endsWith('.md')).slice(0, 10);
   let reads = 0; const adapter: SourceAdapter = { provider: 'file', read: async (source, context) => { reads++; return readFileSnapshot(source, context); } };
   const workspace = join(root, '.agents', 'pm'); const options = { workspace, root, author: 'evidence-evaluation', adapters: [adapter] };

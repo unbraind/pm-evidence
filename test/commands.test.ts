@@ -36,6 +36,7 @@ test('in-process command dispatch covers selectors, defaults and typed unexpecte
   const ctx = { command: 'evidence cite', pm_root: f.workspace, args: [f.item, 'doc.md'], options: { root: f.root, heading: 'Policy' }, global: { author: 'fixture' } } as CommandHandlerContext;
   await runCommand('cite', ctx); await runCommand('cite', { ...ctx, args: [f.item, 'doc.json'], options: { root: f.root, pointer: '/a' } });
   await runCommand('check', { ...ctx, args: [f.item], options: { root: f.root } });
+  await runCommand('check', { ...ctx, args: [f.item], options: { root: f.root, maxBytes: '1000', timeoutMs: '1000', readOnly: true } });
   await runCommand('affected', { ...ctx, args: [], options: { root: f.root, changed: 'doc.md' } });
   await runCommand('affected', { ...ctx, args: [], options: { root: f.root } });
   await assert.rejects(runCommand('unknown', ctx), { exitCode: 2 });
