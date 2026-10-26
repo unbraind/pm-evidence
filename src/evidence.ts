@@ -1,11 +1,11 @@
-import { citationSchema, envelope, parseCitation, parseSelector, observationSchema } from './citation-schema.ts';
+import { citationSchema, envelope, parseCitation, parseSelector, RecordValidationError } from './citation-schema.ts';
 import { RelationshipGraph } from '@unbrained/pm-cli/sdk';
 import { digest, EvidenceError, inert, packet, requireInput } from './core.ts';
 import { anchor, resolveFragment, select } from './selectors.ts';
 import { snapshot, sourceIdentity } from './sources.ts';
 import { citationById, Store } from './store.ts';
 import { Verification, verificationInput } from './verification.ts';
-import type { AffectedOptions, CheckOptions, CheckRow, Citation, CiteOptions, EvidenceOptions, Impact, ReviewOptions, Resolution, SourceSnapshot, Selector, Descriptor } from './types.ts';
+import type { AffectedOptions, CheckOptions, CheckRow, Citation, CiteOptions, EvidenceOptions, Impact, ReviewOptions, Resolution, SourceSnapshot, Selector, Descriptor, Observation } from './types.ts';
 
 /** Build a source-bound citation without reading or rewriting the native item schema. */
 async function prepare(item: string, source: string, options: CiteOptions, author: string, sourceSnapshot?: SourceSnapshot, sectionScoped = false): Promise<Citation> {
@@ -83,7 +83,7 @@ export async function check(items: readonly string[] = [], options: CheckOptions
     try {
       const recorded = await store.observe(observation.item, observation.rows, observation.revision, observation.raw, () => verification.canceled());
       if (recorded === true) verification.receipt.recordedItems++; else verification.receipt.skippedItems++;
-    } catch (error) { if (!(error instanceof EvidenceError) || !['conflict', 'schema'].includes(error.code)) throw error; if (error.code === 'schema') verification.receipt.foreignItems++; verification.receipt.skippedItems++; }
+    } catch (error) { if (!(error instanceof EvidenceError) || !['conflict', 'schema'].includes(error.code)) throw error; if (error instanceof RecordValidationError) verification.receipt.refusal ??= { code: error.code, remedy: error.remedy, field: error.field, limit: error.limit, observed: error.observed }; else if (error.code === 'schema') verification.receipt.foreignItems++; verification.receipt.skippedItems++; }
   }
   return packet(rows, { items: selected.length, citations: rows.length }, settings.budget, !verification.canceled() && verification.receipt.skippedItems === 0 && verification.receipt.foreignItems === 0 && rows.every(row => row.freshness !== 'unknown'), verification.finish());
 }
@@ -136,11 +136,11 @@ async function reanchor(item: string, original: Citation, options: ReviewOptions
 }
 /** Append an idempotent review through lock-held expected-state mutation, preserving original evidence. */
 export async function review(item: string, options: ReviewOptions) {
-  requireInput(['still-valid', 're-anchored', 'superseded', 'invalid'].includes(options.disposition) && options.reason.trim().length > 0 && options.reason.length <= 1000 && !/[\u0000-\u001f\u007f-\u009f]/.test(options.reason), 'Review requires a valid disposition and a plain-text reason');
+  requireInput(['still-valid', 're-anchored', 'superseded', 'invalid'].includes(options.disposition) && options.reason.trim().length > 0 && !/[\u0000-\u001f\u007f-\u009f]/.test(options.reason), 'Review requires a valid disposition and a plain-text reason');
   const store = new Store(options); const author = await store.author(); const canonical = (await store.get(item)).item.id; const original = citationById((await store.get(canonical)).value.citations, options.citation);
   const replacement = options.disposition === 're-anchored' ? await reanchor(canonical, original, options, author) : undefined;
   const id = `review-${digest(JSON.stringify([canonical, options.citation, author, options.disposition, options.reason, replacement?.id])).slice(0, 24)}`;
-  const observation = observationSchema.parse({ id, author, at: new Date().toISOString(), disposition: options.disposition, reason: options.reason, ...(replacement === undefined ? {} : { replacement: replacement.id }) });
+  const observation: Observation = { id, author, at: new Date().toISOString(), disposition: options.disposition, reason: options.reason, ...(replacement === undefined ? {} : { replacement: replacement.id }) };
   await store.mutate(canonical, value => { const current = citationById(value.citations, options.citation); if (current.reviews.some(entry => entry.id === id)) return undefined; current.reviews.push(observation); if (replacement !== undefined && !value.citations.some(entry => entry.id === replacement.id)) value.citations.push(replacement); return { value: true, observation: `evidence review ${id} ${options.disposition}` }; }, options.expectedRevision);
   return { item: canonical, citation: options.citation, observation: id, ...(replacement === undefined ? {} : { replacement: replacement.id }) };
 }

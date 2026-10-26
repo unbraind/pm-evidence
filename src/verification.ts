@@ -73,8 +73,10 @@ export class Verification {
   /** Verify all emitted counters before returning a successful packet. */
   finish(): VerificationReceipt {
     this.canceled();
-    requireInput(Object.entries(this.receipt).every(([key, value]) => key === 'canceled' ? typeof value === 'boolean' : integer(value, 0, MAX_ENTRIES)) && this.receipt.sourceReads <= this.receipt.sources, 'Verification produced invalid counters');
-    const refusal: VerificationReceipt['refusal'] = this.receipt.canceled ? { code: 'canceled', remedy: 'Retry the incomplete check with a live signal' } : (this.receipt.invalidCitations ?? 0) > 0 ? { code: 'schema', remedy: 'Malformed citations were reported individually; inspect their citationIndex and restore their producer schema' } : this.receipt.foreignItems > 0 ? { code: 'schema', remedy: 'Foreign or malformed evidence was skipped; inspect its owner and schema before retrying' } : this.receipt.skippedItems > 0 ? { code: 'conflict', remedy: 'Evidence changed before recording; re-read the current target and retry the skipped observations' } : undefined;
+    const { refusal: recordingRefusal, ...counts } = this.receipt;
+    requireInput(recordingRefusal === undefined || [recordingRefusal.limit, recordingRefusal.observed].every(value => value === undefined || typeof value === 'string' || Number.isFinite(value)), 'Verification produced invalid refusal bounds');
+    requireInput(Object.entries(counts).every(([key, value]) => key === 'canceled' ? typeof value === 'boolean' : integer(value, 0, MAX_ENTRIES)) && this.receipt.sourceReads <= this.receipt.sources, 'Verification produced invalid counters');
+    const refusal: VerificationReceipt['refusal'] = this.receipt.canceled ? { code: 'canceled', remedy: 'Retry the incomplete check with a live signal' } : recordingRefusal ?? ((this.receipt.invalidCitations ?? 0) > 0 ? { code: 'schema', remedy: 'Malformed citations were reported individually; inspect their citationIndex and restore their producer schema' } : this.receipt.foreignItems > 0 ? { code: 'schema', remedy: 'Foreign or malformed evidence was skipped; inspect its owner and schema before retrying' } : this.receipt.skippedItems > 0 ? { code: 'conflict', remedy: 'Evidence changed before recording; re-read the current target and retry the skipped observations' } : undefined);
     return { ...this.receipt, ...(refusal === undefined ? {} : { refusal }) };
   }
 }

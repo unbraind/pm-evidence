@@ -17,7 +17,7 @@ export interface CiteOptions extends EvidenceOptions { selector: Selector; provi
 /** Bounded checks may request inert fragment differences or historical retained-byte replay. */
 export interface CheckOptions extends EvidenceOptions { budget?: number; diff?: boolean; revision?: 'current' | 'cited'; record?: boolean }
 /** Invocation-local read attempts, completed citation checks and observation outcomes. */
-export interface VerificationReceipt { sourceReads: number; sources: number; checked: number; canceled: boolean; recordedItems: number; skippedItems: number; foreignItems: number; invalidCitations?: number; refusal?: { code: EvidenceCode; remedy: string } }
+export interface VerificationReceipt { sourceReads: number; sources: number; checked: number; canceled: boolean; recordedItems: number; skippedItems: number; foreignItems: number; invalidCitations?: number; refusal?: { code: EvidenceCode; remedy: string; field?: string; limit?: number | string; observed?: number | string } }
 /** Bounded impact over certified SDK item and relationship reads. */
 export interface AffectedOptions extends CheckOptions { changed?: readonly string[]; depth?: number; limit?: number }
 /** Review retries preserve the original descriptor; re-anchoring creates a separate citation. */

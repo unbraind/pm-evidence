@@ -63,11 +63,37 @@ export type EvidenceState = z.infer<typeof stateSchema>;
 /** Envelope retaining malformed entries without interpreting or deleting them. */
 export type EvidenceEnvelope = z.infer<typeof envelopeSchema>;
 
-/** Normalize all schema diagnostics to safe package-owned refusals without operand contents. */
+/** A safe structured schema constraint refusal; operands are summarized, never echoed. */
+export class RecordValidationError extends EvidenceError {
+  /** Schema-owned field location and constraint kind. */
+  readonly field: string;
+  /** Numeric bound or schema rule that the complete record must satisfy. */
+  readonly limit: number | string;
+  /** Observed collection/string length, number, or operand type. */
+  readonly observed: number | string;
+  /** Preserve actionable diagnostics without exposing source text. */
+  constructor(field: string, limit: number | string, observed: number | string) {
+    super('schema', `Record constraint at ${field}: limit=${limit}; observed=${observed}`, 'Reduce the reported field to its schema limit or restore a valid value, then retry against the current revision');
+    this.field = field; this.limit = limit; this.observed = observed;
+  }
+}
+/** Validate complete durable state on both sides of every native conditional commit. */
+export function validateRecord(value: unknown, owner?: string): EvidenceState {
+  const parsed = stateSchema.safeParse(value);
+  if (parsed.success) {
+    for (const [index, citation] of parsed.data.citations.entries()) if (owner !== undefined && citation.provenance.item !== owner) throw new RecordValidationError(`citations.${index}.provenance.item`, 'owning item', citation.provenance.item.length);
+    return parsed.data;
+  }
+  const issue = parsed.error.issues[0];
+  let operand: unknown = value;
+  for (const key of issue.path) operand = Reflect.get(Object(operand), key);
+  const observed = typeof operand === 'string' || Array.isArray(operand) ? operand.length : typeof operand === 'number' && Number.isFinite(operand) ? operand : typeof operand;
+  const limit = issue.code === 'too_big' ? issue.maximum : issue.code === 'too_small' ? issue.minimum : issue.code === 'invalid_value' ? issue.values.map(String).join('|') : issue.code === 'invalid_format' ? issue.format : issue.code === 'invalid_type' ? issue.expected : issue.code;
+  throw new RecordValidationError(issue.path.join('.'), String(limit), observed);
+}
+/** Citation readers use the full record validator, retaining per-entry failure isolation. */
 export function parseCitation(value: unknown, owner?: string): Citation {
-  const parsed = citationSchema.safeParse(value);
-  if (!parsed.success || (owner !== undefined && parsed.data.provenance.item !== owner)) throw new EvidenceError('schema', 'Citation metadata is malformed or belongs to another item', 'Inspect this citation and restore its producer schema; valid sibling citations are still checked');
-  return parsed.data;
+  return validateRecord({ version: 1, revision: 0, citations: [value] }, owner).citations[0];
 }
 /** Decode only the owned envelope so a malformed entry cannot hide its valid siblings. */
 export function envelope(raw: unknown): EvidenceEnvelope {

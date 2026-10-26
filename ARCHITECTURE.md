@@ -46,3 +46,7 @@ Affected uses `listAllComplete` and `certifyCompleteListResult`; incomplete corp
 ## Privacy and inert rendering
 
 Only explicit `--retain` stores replay bytes. Text selectors necessarily store their exact quote/context to relocate evidence even without retention; retained replay is a separate verified copy. Source anchors and retained bytes are excluded from routine show/check output. `--diff` contains labeled `source-data` arrays; control bytes are escaped so ANSI cannot alter terminal output. Source content never becomes a command, callback, instruction, exception message or automatic upload. Diagnostics are package-owned text with remedies. Hashes and relative identities can still reveal equality and filenames; choosing sources and committing tracker evidence remains an explicit caller decision.
+
+## Complete-state write/read law
+
+All evidence writes converge on `Store.commit` and the exported `validateRecord`. The serialized value is the full validated copy, guarded by the same SDK conditional mutation; retries rebuild from fresh SDK state. Preflight validation occurs before schema registration, which is followed by a fresh target read. Readers reuse the same validator, with per-citation isolation during verification. Schema refusals include a field, limit, observed number/type and remedy; no invalid complete state is republished. [Boundary evidence and write-path audit](docs/record-validation.md) describe the seeded mutation law and exact tracker-byte checks.

@@ -24,7 +24,7 @@ test('review: tab ancestor headings round trip through cite check and affected',
   assert.equal((await affected(f.options)).rows[0].freshness, 'changed');
 });
 
-test('malformed citations are individual refusals while valid siblings resolve and record', async t => {
+test('malformed citations are individual refusals while valid siblings resolve without persisting invalid state', async t => {
   const f = await tracker(t); await writeFile(join(f.root, 'doc.md'), 'Valid sibling claim');
   const cited = await cite(f.item, 'doc.md', { ...f.options, selector: { kind: 'lines', start: 1, end: 1 } });
   const before = envelope((await f.client.get(f.item, { full: true })).item.evidence_state);
@@ -34,10 +34,11 @@ test('malformed citations are individual refusals while valid siblings resolve a
   const result = await check([f.item], { ...f.options, budget: 20000 });
   assert.equal(result.rows.length, 4); assert.equal(result.rows[2].citation, cited.citation); assert.equal(result.rows[2].freshness, 'current');
   assert.deepEqual(result.rows.filter(row => row.code === 'schema').map(row => row.citationIndex), [1, 2, 4]);
-  assert.equal(result.receipt.verification?.invalidCitations, 3); assert.equal(result.receipt.verification?.foreignItems, 0); assert.equal(result.receipt.verification?.recordedItems, 1); assert.equal(result.receipt.complete, false);
+  assert.equal(result.receipt.verification?.invalidCitations, 3); assert.equal(result.receipt.verification?.foreignItems, 0); assert.equal(result.receipt.verification?.recordedItems, 0); assert.equal(result.receipt.complete, false);
   const saved = envelope((await f.client.get(f.item, { full: true })).item.evidence_state);
   assert.deepEqual(saved.citations[0], null); assert.deepEqual(saved.citations[1], bad); assert.deepEqual(saved.citations[3], before.citations[0]);
-  assert.equal(parseCitation(saved.citations[2], f.item).lastCheck?.freshness, 'current');
+  assert.equal(parseCitation(saved.citations[2], f.item).lastCheck, undefined);
+  assert.deepEqual(saved, mixed);
   const impact = await affected({ ...f.options, budget: 20000, changed: ['unrelated.md'] });
   assert.equal(impact.receipt.verification?.foreignItems, 0); assert.equal(impact.rows.filter(row => row.code === 'schema').length, 3);
   await commitItemMutations({ pmRoot: f.workspace, author: 'fixture', transactionId: 'roundtrip-all-bad', mutations: [{ op: 'update', id: f.item, options: { evidenceState: JSON.stringify({ ...mixed, citations: [null] }) } }] });

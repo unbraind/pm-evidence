@@ -122,3 +122,7 @@ Cite, check, affected, review, show, retained replay and all SDK APIs work in or
 Exit 0 means the requested operation completed; individual changed, ambiguous or missing citations are data in the status report. Exit 2 is a typed input, source, schema, budget or SDK refusal with a remedy. Exit 3 is a review/revision conflict. A partial report still exits 0 and explicitly marks omissions/incompleteness.
 
 `npm run release:check` and `bun run release:check` enforce identity/privacy, TypeScript, ESLint, zero duplication, complete docstrings, 100% statement/branch/function/line coverage across src, index, scripts and lint config, production audit, package allowlist, generated changelog, attested-release workflow and packed consumer acceptance. Tests use real SDK temp trackers and real filesystem races, without SDK mocks. Synthetic fixtures remain in the repository; public-data copies and tarballs do not.
+
+### Complete records remain readable
+
+Every citation, review, retained-byte upgrade and recorded check validates the complete resulting record through the exported `validateRecord` before the conditional SDK commit. For example, adding review 10,001 to a citation with 10,000 reviews returns a typed `RecordValidationError` (`code: schema`, `limit: "10000"`, `observed: 10001`) with a remedy and writes nothing. `show` and per-citation verification use the same validator. Malformed siblings remain individually visible; recording waits until the complete state is valid. See [the write-path and schema-limit audit](docs/record-validation.md).

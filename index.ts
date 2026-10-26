@@ -14,4 +14,4 @@ export type { SourceAdapter, SourceSnapshot, ReadContext, Descriptor, Selector, 
 export default defineExtension({ name: 'pm-evidence', version: '2026.10.23', description: 'Exact source fragment freshness for agents', activate: register });
 
 /** Runtime citation contracts shared by creation, verification and SDK consumers. */
-export { citationSchema, selectorSchema, ancestrySchema, parseCitation } from './src/citation-schema.ts';
+export { citationSchema, selectorSchema, ancestrySchema, parseCitation, validateRecord, RecordValidationError } from './src/citation-schema.ts';
