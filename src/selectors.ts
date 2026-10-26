@@ -1,4 +1,5 @@
 import { digest, EvidenceError, requireInput } from './core.ts';
+import { parseSelector, ancestrySchema, anchorSchema } from './citation-schema.ts';
 import { jsonFragment } from './json-spans.ts';
 import type { Anchor, Descriptor, Selector } from './types.ts';
 
@@ -13,14 +14,11 @@ export function hits(text: string, quote: string): number[] {
 }
 /** Read RFC 6901 tokens strictly, retaining array and own-property semantics. */
 function pointer(text: string, path: string): Fragment {
-  requireInput(path === '' || path.startsWith('/'), 'JSON pointer must be empty or start with slash');
-  requireInput(!/~(?:[^01]|$)/.test(path), 'JSON pointer has an invalid escape');
   const tokens = (path === '' ? [] : path.slice(1).split('/')).map(part => part.replace(/~1/g, '/').replace(/~0/g, '~'));
   return jsonFragment(text, tokens);
 }
 /** Select an ATX heading's paragraph; duplicate headings cannot establish identity. */
 function paragraph(text: string, selector: Extract<Selector, { kind: 'heading' }>): Fragment {
-  requireInput(selector.heading.length > 0 && !/[\u0000-\u001f\u007f-\u009f]/.test(selector.heading) && Number.isSafeInteger(selector.paragraph) && selector.paragraph > 0, 'Heading and positive paragraph number are required');
   const headings = [...text.matchAll(/^(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*\r?$/gm)];
   const matches = headings.filter(entry => entry[2] === selector.heading);
   if (matches.length !== 1) throw new EvidenceError(matches.length === 0 ? 'missing' : 'ambiguous', 'Heading is absent or repeated', 'Select a unique ATX heading');
@@ -35,9 +33,9 @@ function paragraph(text: string, selector: Extract<Selector, { kind: 'heading' }
 }
 /** Resolve the caller's initial structural selector without whole-document output. */
 export function select(text: string, selector: Selector): Fragment {
+  selector = parseSelector(selector);
   if (selector.kind === 'pointer') return pointer(text, selector.pointer);
   if (selector.kind === 'heading') return paragraph(text, selector);
-  requireInput(selector.kind === 'lines' && Number.isSafeInteger(selector.start) && Number.isSafeInteger(selector.end) && selector.start >= 1 && selector.end >= selector.start, 'Line range must be positive and ordered');
   const lines = text.split('\n'); if (lines.at(-1) === '') lines.pop();
   if (selector.end > lines.length) throw new EvidenceError('missing', 'Line range exceeds the source', 'Choose lines present in the source');
   const start = lines.slice(0, selector.start - 1).join('\n').length + (selector.start === 1 ? 0 : 1);
@@ -53,10 +51,10 @@ export function sectionPath(text: string, offset: number): string[] {
     while (stack.length > 0 && stack.at(-1)!.depth >= heading[1].length) stack.pop();
     stack.push({ depth: heading[1].length, title: heading[2] });
   }
-  return stack.map(entry => entry.title);
+  return ancestrySchema.parse(stack.map(entry => entry.title));
 }
 /** Retain exact quote, neighboring characters and Markdown ancestry for conservative relocation. */
-export function anchor(text: string, fragment: Fragment, heading = false): Anchor { return { quote: fragment.text, before: text.slice(Math.max(0, fragment.start - 24), fragment.start), after: text.slice(fragment.end, fragment.end + 24), ...(heading ? { sectionPath: sectionPath(text, fragment.start) } : {}) }; }
+export function anchor(text: string, fragment: Fragment, heading = false): Anchor { return anchorSchema.parse({ quote: fragment.text, before: text.slice(Math.max(0, fragment.start - 24), fragment.start), after: text.slice(fragment.end, fragment.end + 24), ...(heading ? { sectionPath: sectionPath(text, fragment.start) } : {}) }); }
 /** Require matching immediate surroundings and section identity at every candidate passage. */
 function passageContext(text: string, descriptor: Descriptor, start: number, end: number): void {
   const witness = descriptor.anchor!;

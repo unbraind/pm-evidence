@@ -1,7 +1,8 @@
 import { PmClient } from '@unbrained/pm-cli/sdk';
 import { EvidenceError, requireInput } from './core.ts';
+import { citationListSchema, descriptorSchema } from './citation-schema.ts';
 import { snapshot, sourceIdentity } from './sources.ts';
-import type { AffectedOptions, Citation, SourceSnapshot, VerificationReceipt } from './types.ts';
+import type { AffectedOptions, SourceSnapshot, VerificationReceipt } from './types.ts';
 
 /** Bound all verification arrays and counters before enumeration or source access. */
 const MAX_ENTRIES = 10_000;
@@ -28,26 +29,12 @@ export function verificationInput(items: readonly string[], options: AffectedOpt
   if (options.changed !== undefined) requireInput(dense(options.changed, MAX_ENTRIES) && options.changed.every(text), 'Changed sources must be a bounded dense text array');
   if (options.adapters !== undefined) {
     requireInput(dense(options.adapters, 64), 'Adapters must be a dense array of at most 64 readers');
-    for (const adapter of options.adapters) requireInput(typeof adapter === 'object' && adapter !== null && Object.keys(adapter).every(key => ['provider', 'read'].includes(key)) && text(adapter.provider) && typeof adapter.read === 'function', 'Adapters require only a bounded provider and read function');
+    for (const adapter of options.adapters) requireInput(typeof adapter === 'object' && adapter !== null && Object.keys(adapter).every(key => ['provider', 'read'].includes(key)) && descriptorSchema.shape.provider.safeParse(adapter.provider).success && typeof adapter.read === 'function', 'Adapters require only a bounded provider and read function');
     requireInput(new Set(options.adapters.map(adapter => adapter.provider)).size === options.adapters.length, 'Adapter providers must be unique');
   }
 }
-/** Validate stored citation operands before using their fields or recording observations on them. */
-export function verificationCitations(citations: Citation[]): void {
-  requireInput(dense(citations, MAX_ENTRIES), 'Citation scope must be dense and bounded');
-  requireInput(new Set(citations.map(citation => citation.id)).size === citations.length, 'Citation identities must be unique');
-  for (const citation of citations) {
-    const descriptor = citation.descriptor; const selector = descriptor?.selector;
-    requireInput([citation.id, citation.fragmentDigest, citation.provenance?.item, descriptor?.provider, descriptor?.source, descriptor?.revision].every(text), 'Citation metadata is foreign or malformed');
-    requireInput(selector !== undefined && selector !== null, 'Citation selector is missing');
-    if (selector.kind === 'lines') requireInput(integer(selector.start, 1, Number.MAX_SAFE_INTEGER) && integer(selector.end, selector.start, Number.MAX_SAFE_INTEGER), 'Citation line range is invalid');
-    else if (selector.kind === 'heading') requireInput(text(selector.heading) && integer(selector.paragraph, 1, Number.MAX_SAFE_INTEGER), 'Citation heading is invalid');
-    else requireInput(selector.kind === 'pointer' && typeof selector.pointer === 'string' && selector.pointer.length <= 4096, 'Citation pointer is invalid');
-    if (descriptor.anchor !== undefined) requireInput([descriptor.anchor?.quote, descriptor.anchor?.before, descriptor.anchor?.after].every(value => typeof value === 'string' && value.length <= 16_777_216), 'Citation anchor is invalid');
-    if (descriptor.anchor?.sectionPath !== undefined) requireInput(dense(descriptor.anchor.sectionPath, 16) && descriptor.anchor.sectionPath.every(text), 'Citation heading ancestry is invalid');
-    if (citation.retained !== undefined) requireInput(typeof citation.retained === 'string' && citation.retained.length <= 22_369_624, 'Citation retained bytes are invalid');
-  }
-}
+/** Legacy internal list entrypoint delegates to the exact producer schema. */
+export function verificationCitations(citations: unknown): void { citationListSchema.parse(citations); }
 /** Share successes and refusals for exactly one invocation and one caller-selected authority. */
 export class Verification {
   /** Snapshot promises own copied immutable data, never adapter-owned mutable objects. */
@@ -87,7 +74,7 @@ export class Verification {
   finish(): VerificationReceipt {
     this.canceled();
     requireInput(Object.entries(this.receipt).every(([key, value]) => key === 'canceled' ? typeof value === 'boolean' : integer(value, 0, MAX_ENTRIES)) && this.receipt.sourceReads <= this.receipt.sources, 'Verification produced invalid counters');
-    const refusal: VerificationReceipt['refusal'] = this.receipt.canceled ? { code: 'canceled', remedy: 'Retry the incomplete check with a live signal' } : this.receipt.foreignItems > 0 ? { code: 'schema', remedy: 'Foreign or malformed evidence was skipped; inspect its owner and schema before retrying' } : this.receipt.skippedItems > 0 ? { code: 'conflict', remedy: 'Evidence changed before recording; re-read the current target and retry the skipped observations' } : undefined;
+    const refusal: VerificationReceipt['refusal'] = this.receipt.canceled ? { code: 'canceled', remedy: 'Retry the incomplete check with a live signal' } : (this.receipt.invalidCitations ?? 0) > 0 ? { code: 'schema', remedy: 'Malformed citations were reported individually; inspect their citationIndex and restore their producer schema' } : this.receipt.foreignItems > 0 ? { code: 'schema', remedy: 'Foreign or malformed evidence was skipped; inspect its owner and schema before retrying' } : this.receipt.skippedItems > 0 ? { code: 'conflict', remedy: 'Evidence changed before recording; re-read the current target and retry the skipped observations' } : undefined;
     return { ...this.receipt, ...(refusal === undefined ? {} : { refusal }) };
   }
 }

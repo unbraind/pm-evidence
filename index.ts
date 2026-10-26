@@ -12,3 +12,6 @@ export type { EvidenceCode } from './src/core.ts';
 export type { SourceAdapter, SourceSnapshot, ReadContext, Descriptor, Selector, Citation, EvidenceOptions, CiteOptions, CheckOptions, AffectedOptions, ReviewOptions, CheckRow, Packet, Impact, Resolution, Freshness, Disposition, VerificationReceipt } from './src/types.ts';
 /** Activate evidence commands and registered item fields in the pm host. */
 export default defineExtension({ name: 'pm-evidence', version: '2026.10.23', description: 'Exact source fragment freshness for agents', activate: register });
+
+/** Runtime citation contracts shared by creation, verification and SDK consumers. */
+export { citationSchema, selectorSchema, ancestrySchema, parseCitation } from './src/citation-schema.ts';

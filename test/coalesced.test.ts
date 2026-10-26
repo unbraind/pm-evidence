@@ -133,7 +133,7 @@ test('stored operand schema rejects malformed foreign citations before recording
   const malformed = structuredClone(citation); malformed.descriptor.selector = null as unknown as Citation['descriptor']['selector'];
   assert.equal((await checkCitation(malformed, f.options)).code, 'schema');
   await new Store(f.options).mutate(f.item, value => { value.citations[0].provenance.item = 'foreign-owner'; return { value: true, observation: 'Synthetic foreign citation owner' }; });
-  const result = await check([f.item], f.options); assert.equal(result.receipt.verification?.foreignItems, 1); assert.equal(result.receipt.verification?.sourceReads, 0);
+  const result = await check([f.item], f.options); assert.equal(result.receipt.verification?.foreignItems, 0); assert.equal(result.receipt.verification?.invalidCitations, 1); assert.equal(result.receipt.verification?.sourceReads, 2); assert.equal(result.rows.filter(row => row.freshness === 'current').length, 2);
   let seed = 0x1025;
   const values = [NaN, Infinity, -Infinity, -Number.MAX_VALUE, Number.MAX_VALUE, -1, 0, 0.1, 1, 16, 10000, 60000, 1000000, 16777216, Number.MAX_SAFE_INTEGER, '1', null];
   const keys = ['maxBytes', 'timeoutMs', 'budget', 'depth', 'limit'] as const;

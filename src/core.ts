@@ -4,7 +4,9 @@ import { encode } from '@toon-format/toon';
 import type { Packet, VerificationReceipt } from './types.ts';
 
 /** Stable refusal discriminants for SDK and compact row consumers. */
-export type EvidenceCode = 'invalid' | 'budget' | 'missing' | 'ambiguous' | 'unsupported' | 'boundary' | 'canceled' | 'inaccessible' | 'race' | 'size' | 'timeout' | 'conflict' | 'integrity' | 'schema' | 'sdk';
+export const EVIDENCE_CODES = ['invalid', 'budget', 'missing', 'ambiguous', 'unsupported', 'boundary', 'canceled', 'inaccessible', 'race', 'size', 'timeout', 'conflict', 'integrity', 'schema', 'sdk'] as const;
+/** Refusal types derive from the same runtime discriminants as stored check observations. */
+export type EvidenceCode = typeof EVIDENCE_CODES[number];
 /** Typed refusal with an actionable remedy and no source or absolute path diagnostics. */
 export class EvidenceError extends Error {
   /** Capture only package-owned safe diagnostics. */
