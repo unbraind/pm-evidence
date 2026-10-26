@@ -19,7 +19,7 @@ class CompetingStore extends Store {
 /** Route one attempted write to an absent native identity to exercise SDK failure normalization. */
 class AbsentStore extends Store {
   /** The SDK still performs the real mutation and refuses its absent target. */
-  override async commit(_id: string, raw: unknown, value: EvidenceState, observation: string, expectedUpdatedAt?: string): Promise<void> { await super.commit('absent', raw, value, observation, expectedUpdatedAt); }
+  override async commit(_id: string, raw: unknown, value: EvidenceState, observation: string, expectedUpdatedAt?: string): Promise<void> { await super.commit('absent', raw, { ...value, citations: value.citations.map(citation => ({ ...citation, provenance: { ...citation.provenance, item: 'absent' } })) }, observation, expectedUpdatedAt); }
 }
 
 test('schema incompatibility, default attribution, expected revisions and bounded real conflict retries', async t => {

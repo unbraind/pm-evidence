@@ -68,10 +68,13 @@ export async function snapshot(provider: string, source: string, options: Eviden
     signal.throwIfAborted();
     const result = await Promise.race([adapter.read(sourceIdentity(source), { root: options.root ?? '.', maxBytes, signal }), timeout]);
     signal.throwIfAborted();
-    requireInput(Buffer.byteLength(result.text) <= maxBytes && result.revision === digest(result.text), 'Adapter must return one size-bounded content digest revision');
-    return result;
+    requireInput(typeof result === 'object' && result !== null && typeof result.text === 'string' && Buffer.byteLength(result.text) <= maxBytes && result.revision === digest(result.text), 'Adapter must return one size-bounded content digest revision');
+    return Object.freeze({ text: result.text, revision: result.revision });
   };
-  return read().catch(error => { throw sourceError(error); }).finally(() => { clearTimeout(timer); });
+  /** Abort promptly even when a trusted adapter does not cooperate with its signal. */
+  let abort: () => void;
+  const canceled = new Promise<never>((_resolve, reject) => { abort = () => reject(options.signal?.aborted === true ? new EvidenceError('canceled', 'Source read was canceled', 'Retry the check with a live signal; this receipt is incomplete') : new EvidenceError('timeout', 'Source read deadline exceeded', 'Retry with an available bounded source')); signal.addEventListener('abort', abort, { once: true }); });
+  return Promise.race([read(), canceled]).catch(error => { if (options.signal?.aborted === true) throw new EvidenceError('canceled', 'Source read was canceled', 'Retry the check with a live signal; this receipt is incomplete'); throw sourceError(error); }).finally(() => { clearTimeout(timer); signal.removeEventListener('abort', abort); });
 }
 
 /** Normalize arbitrary adapter failures without disclosing source paths or exception content. */
