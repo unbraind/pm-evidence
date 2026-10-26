@@ -13,6 +13,7 @@
 
 ### Other
 
+- Align host and npm floors with published SDK capabilities ([pm-evidence-sdk-floor-1025](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/tasks/pm-evidence-sdk-floor-1025.toon))
 - Use the pm SDK for evidence token accounting and output budgets ([pm-evidence-sdk-adoption-1025](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/tasks/pm-evidence-sdk-adoption-1025.toon))
 - Reconcile stale in-progress tracker records (2026-10-23) ([pm-evidence-reconcile-1023](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/chores/pm-evidence-reconcile-1023.toon))
 - Exact source evidence freshness for agent handoffs ([pm-evidence-build](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/epics/pm-evidence-build.toon))
