@@ -9,7 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { testEnvironment } from '../scripts/environment.ts';
 import { apply, assertReadable, boundaries, full, random } from './record-boundaries.ts';
 import type { Shape } from './record-boundaries.ts';
-import { stateSchema } from '../src/citation-schema.ts';
+import { envelopeSchema, stateSchema } from '../src/citation-schema.ts';
 import { Store } from '../src/store.ts';
 import { citedTracker, tracker } from './helpers.ts';
 
@@ -75,9 +75,14 @@ test('every schema boundary follows the complete-record write/read law', async t
   const duplicate = structuredClone(base); duplicate.citations.push(duplicate.citations[0]); assert.throws(() => validateRecord(duplicate), RecordValidationError);
   const sparse = structuredClone(base); sparse.citations = Array(1); assert.throws(() => validateRecord(sparse), RecordValidationError);
   const reverse = structuredClone(base); reverse.citations[0].descriptor.selector = { kind: 'lines', start: 2, end: 1 }; assert.throws(() => validateRecord(reverse), RecordValidationError);
+  for (const count of [10001, 1_000_000_000, 2 ** 32 - 1]) {
+    const huge = { ...base, citations: Array(count) }; assert.throws(() => validateRecord(huge), RecordValidationError);
+    assert.equal(envelopeSchema.safeParse(huge).success, false);
+    const reviews = structuredClone(base); reviews.citations[0].reviews = Array(count); assert.throws(() => validateRecord(reviews), RecordValidationError);
+  }
   const extra = { ...base, foreign: true }; assert.throws(() => validateRecord(extra), RecordValidationError);
   assert.throws(() => validateRecord(null), RecordValidationError);
-  t.diagnostic(JSON.stringify({ seed: '0x5c4e6a', schemaDerivedBoundaryCases: tested, accepted, refused, refinements: 10, unicode: 'literal UTF-16 lengths' }));
+  t.diagnostic(JSON.stringify({ seed: '0x5c4e6a', schemaDerivedBoundaryCases: tested, accepted, refused, supplemental: 'pointers/containment/identity/density/ordering/strictness/huge arrays', unicode: 'literal UTF-16 lengths' }));
 });
 
 test('seeded mutation law: successes are SDK-readable and every refusal preserves durable bytes', async t => {

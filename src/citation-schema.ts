@@ -14,8 +14,15 @@ export const selectorSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('heading'), heading: headingText, paragraph: position }),
   z.strictObject({ kind: z.literal('pointer'), pointer: z.string().max(33_554_944).refine(value => (value === '' || value.startsWith('/')) && !/~(?:[^01]|$)/.test(value)) }),
 ]);
+/** Refuse oversized or sparse collections before parsing or allocating their element copies. */
+function boundedArray<T extends z.ZodType>(element: T, maximum: number) {
+  return z.custom<unknown[]>(Array.isArray, { abort: true }).superRefine((values, context) => {
+    if (values.length > maximum) context.addIssue({ code: 'too_big', origin: 'array', maximum, inclusive: true });
+    else if (Array.from({ length: values.length }, (_, index) => Object.hasOwn(values, index)).some(present => !present)) context.addIssue({ code: 'custom' });
+  }).pipe(z.array(element).max(maximum));
+}
 /** ATX headings have at most six active ancestors; tabs and Unicode are literal source content. */
-export const ancestrySchema = z.array(headingText).max(6);
+export const ancestrySchema = boundedArray(headingText, 6);
 /** Anchors retain exact selected and neighboring text from the same source snapshot. */
 export const anchorSchema = z.strictObject({ quote: sourceText.min(1), before: sourceText, after: sourceText, sectionPath: ancestrySchema.optional() });
 /** Source identities reuse the same containment operand policy as citation creation. */
@@ -39,11 +46,11 @@ export type Freshness = z.infer<typeof freshnessSchema>;
 /** Runtime-derived compact check observation. */
 export type CheckRow = z.infer<typeof checkRowSchema>;
 /** The sole citation shape; inferred types and every producer/consumer derive from this schema. */
-export const citationSchema = z.strictObject({ id: z.string().regex(/^ev-[a-f0-9]{24}$/), descriptor: descriptorSchema, fragmentDigest: z.string().regex(/^[a-f0-9]{64}$/), retained: z.string().max(22_369_624).optional(), provenance: z.strictObject({ item: sourceText.min(1), author: sourceText.min(1), at: z.iso.datetime() }), reviews: z.array(observationSchema).max(10_000), lastCheck: checkRowSchema.optional(), lastCheckedAt: z.iso.datetime().optional() });
+export const citationSchema = z.strictObject({ id: z.string().regex(/^ev-[a-f0-9]{24}$/), descriptor: descriptorSchema, fragmentDigest: z.string().regex(/^[a-f0-9]{64}$/), retained: z.string().max(22_369_624).optional(), provenance: z.strictObject({ item: sourceText.min(1), author: sourceText.min(1), at: z.iso.datetime() }), reviews: boundedArray(observationSchema, 10_000), lastCheck: checkRowSchema.optional(), lastCheckedAt: z.iso.datetime().optional() });
 /** Citation lists produced by ordinary mutations are dense and have unique logical identities. */
-export const citationListSchema = z.array(citationSchema).max(10_000).refine(values => new Set(values.map(value => value.id)).size === values.length);
+export const citationListSchema = boundedArray(citationSchema, 10_000).refine(values => new Set(values.map(value => value.id)).size === values.length);
 /** Envelope validation is deliberately independent of individual citation validity. */
-export const envelopeSchema = z.strictObject({ version: z.literal(1), revision: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER), citations: z.custom<unknown[]>(value => Array.isArray(value) && Array.from({ length: value.length }, (_, index) => Object.hasOwn(value, index)).every(Boolean)).pipe(z.array(z.unknown()).max(10_000)) });
+export const envelopeSchema = z.strictObject({ version: z.literal(1), revision: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER), citations: boundedArray(z.unknown(), 10_000) });
 /** Strict state for cite/review; verification instead validates entries individually. */
 export const stateSchema = envelopeSchema.extend({ citations: citationListSchema });
 /** Runtime-derived selector type, with no second manually maintained shape. */
