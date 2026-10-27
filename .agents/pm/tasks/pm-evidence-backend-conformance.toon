@@ -6,11 +6,12 @@ status: open
 priority: 2
 tags[3]: "gh:unbraind/pm-cli#1399",sdk-gap,"upstream:pm-cli#1399"
 created_at: "2026-10-23T07:47:59.020Z"
-updated_at: "2026-10-27T07:34:13.845Z"
+updated_at: "2026-10-27T09:08:56.346Z"
 author: codex-agent
 acceptance_criteria: Backend-aware SDK transaction API available; run concurrent distinct and duplicate review conformance against supported backends before claiming support
 parent: pm-evidence-build
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-27T05:39:39.135Z",codex-agent,"Criterion adapter scope audit: installed public declarations expose commitItemMutations(options: CommitItemMutationsOptions) with required pmRoot and no backend client; getItemAt(id,target,{pmRoot,cwd}) and readHistoryEntries(path,id) likewise provide local history transport. Runtime PmClient has no backend history-read method. Open upstream backend-neutral capability plan is unbraind/pm-cli#1399 (search: history backend). Criterion generation identity therefore shares this existing local-history/transaction limitation; remote backend conformance remains unclaimed, and no hosted data was accessed."
   "2026-10-27T07:34:13.845Z",codex-agent,"The review correction now uses the public mutateItem({pmRoot,settings,id,mutate}) fenced item callback instead of commitItemMutations. This supports exact-state plus criterion-history preconditions in one local SDK lease without changing the SDK pin. The backend limitation remains: mutateItem still requires local pmRoot/settings and exposes no injected backend mutation client; remote conformance is unclaimed."
+  "2026-10-27T09:08:53.038Z",codex-agent,PR #11 delivers criterion-bound source facts on filesystem-backed non-git trackers. Backend-aware conditional mutation conformance remains undelivered and requires the host API described in this item; this task stays open. Reviewed merged PR #11 (9083198cbb72a34229204089a8b99cf45927c734).
 body: ""
