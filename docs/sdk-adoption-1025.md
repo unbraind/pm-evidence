@@ -28,3 +28,13 @@ The new regression primes `listMutationEvents`, corrupts an authoritative histor
 `node test/sdk-revert.acceptance.ts` restores each replaced function from `origin/main` separately and runs the SDK delegation assertion: each yields exactly one failure. These are explicitly **structural** controls. An exactly equivalent pure refactor cannot fail a behavioral parity test when reverted; behavioral revert proof for those two replacements is unavailable without changing the behavior being preserved. The separate history-verification removal yields exactly one **behavioral** corruption-test failure. Every control restores the source bytes in `finally`; tests import source directly and require no stale build workaround.
 
 The full release gates retain their existing coverage and duplication thresholds. The tracker records commands, counts and CI receipts for this change.
+
+## Current writer correction
+
+The earlier bulk-transaction preflight limitation is superseded for current local
+writes: public SDK `mutateItem` provides a fenced item callback. The package now
+checks the exact evidence envelope, verifies authoritative history against that
+locked document, and revalidates criterion generations inside the callback.
+Timestamps are audit data, not revisions. SDK persistence and rollback remain
+canonical; no package transaction journal is replayed. Remote backend conformance
+remains a separate SDK follow-up.

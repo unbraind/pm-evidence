@@ -10,7 +10,7 @@ export async function atBoundary(boundary: string, competing: () => Promise<void
   Store.prototype.register = async function () { await inject('register:before'); await original.register.call(this); await inject('register:after'); };
   Store.prototype.getRaw = async function (id) { await inject('get:before'); const result = await original.getRaw.call(this, id); await inject('get:after'); return result; };
   Store.prototype.author = async function () { await inject('author:before'); const result = await original.author.call(this); await inject('author:after'); return result; };
-  Store.prototype.commit = async function (id, raw, value, observation, expectedUpdatedAt) { await inject('commit:before'); await original.commit.call(this, id, raw, value, observation, expectedUpdatedAt); await inject('commit:after'); };
+  Store.prototype.commit = async function (...args) { await inject('commit:before'); await original.commit.apply(this, args); await inject('commit:after'); };
   try { await run(); assert.equal(injected, true, boundary); }
   finally { Object.assign(Store.prototype, original); }
 }

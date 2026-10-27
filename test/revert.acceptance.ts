@@ -17,7 +17,7 @@ function functionText(source: string, name: string): string {
 const cases: RevertCase[] = [
   { name: 'anchor uniqueness', file: 'src/selectors.ts', target: "  if (occurrences.length > 1) throw new EvidenceError('ambiguous', 'Exact anchor occurs more than once', 'Review and explicitly re-anchor to a unique passage');", mutation: '', test: 'unchanged, outside edits, insertion, movement, duplicate anchors, internal edit and deleted file' },
   { name: 'two independent axes', file: 'src/evidence.ts', target: "row.freshness = row.currentDigest === row.oldDigest ? 'current' : 'changed';", mutation: "row.freshness = row.sourceChanged ? 'changed' : 'current';", test: 'unchanged, outside edits, insertion, movement, duplicate anchors, internal edit and deleted file' },
-  { name: 'lock-held review fencing', file: 'src/store.ts', target: ", match: raw === undefined ? { key: 'updated_at', value: expectedUpdatedAt } : { key: 'evidence_state', value: raw }", mutation: '', test: 'SDK item mutation precondition refuses stale evidence state' },
+  { name: 'lock-held review fencing', file: 'src/store.ts', target: "      if (document.metadata.evidence_state !== raw) throw new Error('Target no longer carries upsert key evidence_state');", mutation: '', test: 'SDK item mutation precondition refuses stale evidence state' },
 ];
 for (const [name, file, functionName, testName] of [
   ['passage identity', 'src/selectors.ts', 'resolveFragment', 'review: unrelated surviving quote cannot replace the cited passage'],

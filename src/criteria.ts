@@ -21,7 +21,7 @@ export type CriterionFact = z.infer<typeof criterionFactSchema>;
 interface Generation extends CriterionRef { count: number }
 
 /** Replay verified SDK history; surviving unique text retains identity through unrelated edits. */
-async function generations(store: Store, item: GetResult['item']): Promise<Generation[]> {
+async function generations(store: Store, item: Pick<GetResult['item'], 'id' | 'acceptance_criteria'>): Promise<Generation[]> {
   const history = await readHistoryEntries(getHistoryPath(store.options.workspace, item.id), item.id);
   if (history.length === 0 || history.length > 10_000 || !verifyHistoryEntries(history).ok) throw new EvidenceError('integrity', 'Criterion history is unavailable or unverifiable', 'Restore verified SDK history with at most 10000 entries before binding criteria');
   let document = { metadata: {} as Record<string, unknown>, body: '' }; let prior = new Map<string, Generation>();
@@ -44,6 +44,13 @@ async function generations(store: Store, item: GetResult['item']): Promise<Gener
   return parsed.data;
 }
 
+/** Validate a criterion against verified current history, including when called inside the writer lease. */
+async function currentCriterion(store: Store, item: Pick<GetResult['item'], 'id' | 'acceptance_criteria'>, ref: CriterionRef): Promise<Generation> {
+  const current = (await generations(store, item)).find(entry => entry.text === ref.text);
+  if (current?.count !== 1 || current.revision !== ref.revision) throw new EvidenceError('conflict', 'Criterion revision is absent, changed or ambiguous', 'Read evidence criteria and select a current unique criterion revision');
+  return current;
+}
+
 /** Persist an exact binding through native revision CAS; retries inspect fresh SDK state. */
 export async function bindCriterion(input: CriterionBinding, options: CheckOptions): Promise<CriterionBinding> {
   const parsed = criterionBindingSchema.safeParse(input);
@@ -51,13 +58,12 @@ export async function bindCriterion(input: CriterionBinding, options: CheckOptio
   verificationInput([], options); const request = parsed.data; const store = new Store(options);
   const canonical = (await store.get(request.item)).item.id;
   await store.mutate(canonical, async (value, item) => {
-    const current = (await generations(store, item)).find(entry => entry.text === request.criterion.text);
-    if (current?.count !== 1 || current.revision !== request.criterion.revision) throw new EvidenceError('conflict', 'Criterion revision is absent, changed or ambiguous', 'Read evidence criteria and select a current unique criterion revision');
+    const current = await currentCriterion(store, item, request.criterion);
     const citation = citationById(value.citations, request.citation);
     if (citation.criteria?.some(entry => entry.text === current.text && entry.revision === current.revision)) return undefined;
     citation.criteria = [...citation.criteria ?? [], request.criterion];
     return { value: true, observation: `evidence bind ${citation.id} ${current.revision}` };
-  });
+  }, undefined, undefined, async item => { await currentCriterion(store, item, request.criterion); });
   const saved = await store.get(canonical);
   const latest = (await generations(store, saved.item)).find(entry => entry.text === request.criterion.text);
   if (latest?.count !== 1 || latest.revision !== request.criterion.revision) throw new EvidenceError('conflict', 'Criterion changed before binding completed', 'Read current criteria before retrying the binding');
@@ -124,7 +130,8 @@ export async function criterionFacts(items: readonly string[], options: CheckOpt
     }
     for (const entry of current) if (!bound.has(entry.text)) append(rows, { ...fact(item.id, entry.text, entry.revision), ...(entry.count === 1 ? {} : { support: 'ambiguous-criterion' as const }) });
     const latest = (await store.getRaw(item.id)).item;
-    if (latest.updated_at !== item.updated_at || latest.evidence_state !== item.evidence_state) {
+    const latestCriteria = await generations(store, latest);
+    if (latest.evidence_state !== item.evidence_state || JSON.stringify(latestCriteria) !== JSON.stringify(current)) {
       complete = false;
       for (const row of rows.slice(start)) Object.assign(row, { support: 'unknown', code: 'conflict', remedy: 'Tracker changed during verification; read current criteria again' });
     }

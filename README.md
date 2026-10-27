@@ -111,7 +111,7 @@ criterion, current revision, bound revision and citation identity with independe
 resolution/freshness facts. Consumers retain their own validation and packing
 engines; the adapter does not run tests, rank evidence or declare acceptance.
 `bindCriterion({item,citation,criterion:{text,revision}}, options)` persists through
-the same registered evidence field and conditional SDK transaction as citations.
+the same registered evidence field and fenced SDK item mutation as citations.
 
 | `support` | Meaning |
 | --- | --- |
@@ -134,8 +134,11 @@ not item ordinals or content hashes alone. A unique unchanged criterion retains
 its generation across reordering, unrelated criterion edits and ordinary item
 updates. Removing and restoring its text produces a new generation; duplicate
 text cannot be bound. Criterion edits race safely with binding: every retry reads
-the current native item and history, and the SDK rechecks `updated_at` under its
-writer lock. Already-present bindings are checked against current state too.
+the current native item and history. Under the SDK item lease, the writer compares
+the exact prior evidence envelope (including absence) and revalidates the criterion
+generation before publishing. Timestamps are never revisions. Already-present
+bindings are checked against current state too. Read-only facts recheck both the
+exact envelope and criterion generations, including edit-and-restore cycles.
 
 `criterionBindingSchema`, `criterionRefSchema`, and `criterionFactSchema` are
 exported runtime schemas with inferred public types. Citation bindings are
@@ -196,7 +199,7 @@ await review('decision-id', {
 
 `SourceAdapter` is `{ provider: string; read(source, {root,maxBytes,signal}): Promise<{text,revision}> }`. Revision must equal the SHA-256 UTF-8 content digest. Pass adapters via `options.adapters`; `fileAdapter` and `jsonAdapter` are exported defaults. Source identity stays relative to the caller root. Adapters are trusted caller-owned readers; no network adapter is included.
 
-`check` accepts `diff`, `budget`, `record` and `revision:'cited'|'current'`. Historical replay requires retained bytes and can resolve while freshness is changed. `replay(citation)` returns the verified retained original; it refuses missing or corrupted bytes. Full durable citations remain in the registered SDK field on the native item, while show provides compact metadata. Options expose `maxBytes`, `timeoutMs`, cancellation `signal` and an optional native `client`. Before an evidence mutation, SDK history reads and `verifyHistoryEntries` independently verify the authoritative history chain, even after the SDK event cache has been primed. Corrupt history now refuses the mutation. This is a preflight check; the SDK transaction still owns locking and field preconditions. Remote backend mutation conformance awaits a backend-aware SDK transaction contract. See [ARCHITECTURE.md](ARCHITECTURE.md) for selectors, status axes, storage, limits and privacy.
+`check` accepts `diff`, `budget`, `record` and `revision:'cited'|'current'`. Historical replay requires retained bytes and can resolve while freshness is changed. `replay(citation)` returns the verified retained original; it refuses missing or corrupted bytes. Full durable citations remain in the registered SDK field on the native item, while show provides compact metadata. Options expose `maxBytes`, `timeoutMs`, cancellation `signal` and an optional native `client`. Inside an evidence mutation, SDK history reads and `verifyHistoryEntries` verify the authoritative history chain against the locked current document, even after the SDK event cache has been primed. Corrupt history refuses the mutation. SDK `mutateItem` owns the item lease, persistence fence, native normalization, history and rollback; SDK linked-artifact helpers merge source links. Comments and evidence are published together without replacing relationships or other native fields. There are no package transaction IDs or frozen journal plans to replay; retries inspect current evidence under an exact-state precondition. Remote backend mutation conformance awaits a backend-aware SDK transaction contract. See [ARCHITECTURE.md](ARCHITECTURE.md) for selectors, status axes, storage, limits and privacy.
 
 ## Real-data proof
 
