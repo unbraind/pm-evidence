@@ -6,15 +6,17 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-27T05:26:08.794Z"
-updated_at: "2026-10-27T05:48:18.321Z"
+updated_at: "2026-10-27T06:15:05.760Z"
 author: codex-agent
 acceptance_criteria: Editing one cited fragment invalidates only its bound criteria; A criterion edit invalidates its old bindings; Resolving a citation never labels it proof of truth; Typed SDK and agent-sized TOON/JSON CLI expose facts with actionable refusals; Real public-tracker copy and seeded SDK state-readback tests validate the contract without git
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-27T05:27:08.257Z",codex-agent,"Overlap rechecked against core SDK declarations and sibling sources: SDK splitAcceptanceCriteria owns criterion parsing, listAllComplete plus certification owns corpus scope, verified history replay owns criterion generation, commitItemMutations owns lock-held CAS. pm-lint witnesses.ts validates declared witnesses; pm-context evidence-packing.ts packs declared criterion groups. Add revision-bound source facts adapter only. Plan: additive citation binding schema, bind and criteria commands, history-derived criterion generations, native-revision CAS, 500 seeded readback sequences, interleavings, producer round trips, packed install journeys, read-only public snapshot measurement, CI npm and Bun full release gates."
   "2026-10-27T05:43:57.036Z",codex-agent,"Packed global installs exposed an existing verifier bug: instanceof PmClient rejected the genuine host-injected client when global and project-local installs loaded separate SDK copies. Replaced constructor identity with the public read/schema method contract; no executable-path or symlink SDK discovery. Initial global npm and Bun journeys both failed with the native-client refusal, providing a real negative control. Rerunning all four installation modes through the final packed artifact."
   "2026-10-27T05:46:00.193Z",codex-agent,"Validation: 500 seeded sequences, 1500 random operations, 500 native SDK state readbacks, 21 preserved native fields and 20 distinct bindings passed (seed 0xc17e2026). Old criterion/source replays, whitespace and CRLF variants, relationships, custom active status and changing ambient focus are included. pm test --run --progress passed the focused 8-test suite. Four isolated function-only negative controls each failed exactly one behavioral regression: removed binding producer, content-only generation, resolution-only support and evidence-only CAS fence; sources restored afterward. Public read-only pm-changelog snapshot 3a99abc30c0d1b1284590e20b81dd8e43243e73e: 202 items, 20 bound criteria, 85 fact rows, 20 current before edit, 19 current and 1 lost after one adapter-supplied fragment edit; 1 source read per invocation; 415 snapshot files rehashed unchanged; 800-token packet used 754 estimated tokens with 6 returned and 79 omitted. No git executable or enclosing repository was available to evidence operations. Full release gates delegated to CI at unchanged thresholds; no merge or release authorized."
   "2026-10-27T05:48:10.964Z",codex-agent,"Implementation and reviewable evidence are complete. Typecheck, lint, zero duplication and docstrings pass. Packed npm global, Bun global, npx/bunx and project-local journeys now exercise criterion binding as well as verification; the host client is validated by its public SDK methods across separate install copies. Local focused coverage and final packed acceptance are running; PR CI supplies full npm plus Bun release-gate evidence at unchanged 100/100/100/100 thresholds. Existing backend-conformance item retains the verified remote SDK limitation. Releasing the implementation claim for orchestrator review; keep this item in progress until independently verified."
-files[16]{path,scope}:
+  "2026-10-27T06:05:48.492Z",codex-agent,"CI run 40457567679 measured all four coverage dimensions at 100%, but 2 of 154 tests failed in the pre-existing schema-boundary generator: new optional criterion bindings were traversed without a corresponding seeded value, producing Reflect.get on undefined. Extending the model fixture to include every new native citation field and rerunning those exact failing property tests before the next CI gate. No runtime support criterion failed."
+  "2026-10-27T06:15:02.528Z",codex-agent,"Extended the schema-derived complete-record seed with criterion metadata, and generate unique criterion references at array boundaries. This exercises every new optional field through the existing full-record SDK readback law rather than excluding it. Typecheck, lint and zero duplication pass; the two exact CI-failing property tests are running locally. Previous final local acceptance passed 25 targeted tests, 2 packed npm/Bun journeys across global, npx/bunx and project-local installs, and all four adapter coverage dimensions. Isolated-config tracker health passes. Pushing the fixture correction for a fresh complete CI release gate; no runtime code or thresholds changed."
+files[18]{path,scope}:
   index.ts,project
   src/citation-schema.ts,project
   src/commands.ts,project
@@ -30,10 +32,13 @@ files[16]{path,scope}:
   test/criteria.test.ts,project
   test/install.acceptance.ts,project
   test/public-copy.ts,project
+  test/record-boundaries.ts,project
+  test/record-law.test.ts,project
   test/store-boundaries.ts,project
-tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+tests[3]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node --test --test-concurrency=1 test/criteria.test.ts test/criteria-races.test.ts,project,codex-agent,"2026-10-27T05:41:38.513Z",local_mutation,feat/criterion-bound-citation-coverage
   node --test --test-concurrency=1 test/criteria-model.test.ts test/criteria-races.test.ts,project,codex-agent,"2026-10-27T05:46:03.200Z",local_mutation,feat/criterion-bound-citation-coverage
+  "node --test --test-concurrency=1 --test-name-pattern=\"every schema boundary|seeded mutation law\" test/record-law.test.ts",project,codex-agent,"2026-10-27T06:14:59.032Z",local_mutation,feat/criterion-bound-citation-coverage
 docs[3]{path,scope}:
   docs/real-data.md,project
   examples/criteria.ts,project
