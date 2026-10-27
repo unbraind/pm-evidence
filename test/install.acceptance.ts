@@ -14,7 +14,7 @@ for (const manager of ['npm', 'bun']) test(`packed ${manager} and ${manager === 
   const repository = resolve(import.meta.dirname, '..'); const root = mkdtempSync(join(tmpdir(), 'evidence-packed-')); t.after(() => rmSync(root, { recursive: true, force: true }));
   const env = { ...npmEnvironment(gitEnvironment(process.env)), HOME: root, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1', GIT_CEILING_DIRECTORIES: root, PM_AUTHOR: 'packed-fixture' };
   const pack = JSON.parse(execute(repository, 'npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', root], env)) as { filename: string; files: { path: string }[] }[];
-  assert.ok(pack[0].files.every(file => /^(dist\/|manifest\.json$|package\.json$|README\.md$|ARCHITECTURE\.md$|docs\/real-data\.md$|LICENSE$|CHANGELOG\.md$)/.test(file.path)));
+  assert.ok(pack[0].files.every(file => /^(dist\/|manifest\.json$|package\.json$|README\.md$|ARCHITECTURE\.md$|docs\/(?:real-data|record-validation)\.md$|LICENSE$|CHANGELOG\.md$)/.test(file.path)));
   const tarball = join(root, pack[0].filename); const consumer = join(root, manager); mkdirSync(consumer);
   const manifest = JSON.parse(readFileSync(join(repository, 'package.json'), 'utf8')) as { devDependencies: Record<string, string> };
   writeFileSync(join(consumer, 'package.json'), JSON.stringify({ name: 'evidence-packed-fixture', private: true, type: 'module', dependencies: { 'pm-evidence': `file:${tarball}`, '@unbrained/pm-cli': manifest.devDependencies['@unbrained/pm-cli'] }, scripts: { evidence: 'pm evidence' } }));

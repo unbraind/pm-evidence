@@ -4,6 +4,7 @@
 
 ### Added
 
+- Verify shared citation sources once per check ([pm-evidence-coalesced-source-verification](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-coalesced-source-verification.toon))
 - Evidence cite ([pm-evidence-cite](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-cite.toon))
 - Evidence affected ([pm-evidence-affected](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-affected.toon))
 - Evidence check ([pm-evidence-check](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-check.toon))
