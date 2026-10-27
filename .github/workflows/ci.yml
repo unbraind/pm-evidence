@@ -60,11 +60,11 @@ jobs:
       - name: Verify commit identities and private path policy
         run: npm run identity:check
 
+      - name: Full npm release gate
+        run: npm run release:check
+
       - name: Verify Bun can install the package graph
         run: bun install --no-save
-
-      - name: npm release gates
-        run: npm run release:check
 
       - name: Bun release gates
         if: matrix.node-version == 26

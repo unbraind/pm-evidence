@@ -4,6 +4,32 @@ Project management = context management. Agents justify Decisions, closes and ha
 
 This is an unreleased package under local review. Publication requires maintainer approval. The examples below work with a locally packed tarball; registry installs become available after approval.
 
+## Install and release approval
+
+The first npm release is pending the maintainer's interactive bootstrap. After
+that first publish, the maintainer configures npm trusted publishing for
+`release.yml` and sets the repository variable `PM_RELEASE_APPROVED` to `true`.
+The daily workflow and manual dispatch both require this variable and `main`.
+Publishing uses OIDC with provenance; no stored npm token is needed.
+
+Once published, install the package and compatible pm host, then activate the
+extension in an initialized pm project:
+
+```sh
+npm install pm-evidence @unbrained/pm-cli
+npx --no-install pm package install ./node_modules/pm-evidence
+
+bun add pm-evidence @unbrained/pm-cli
+bunx --bun --no-install pm package install ./node_modules/pm-evidence
+
+pm package install npm:pm-evidence
+pm evidence --help
+```
+
+The package exports its SDK through `main` and `types` and registers commands
+with pm. It has no standalone `bin`: use `npx pm` or `bunx --bun pm` through
+the installed host. npm/Bun dependency installation alone does not activate it.
+
 ## Install
 
 Requires Node 22.18+ and pm 2026.10.23+. Built-in file/JSON reads require Linux with accessible procfs descriptor links and fail closed on unsupported platforms; no weaker path-only mode is enabled. From this checkout:
@@ -126,3 +152,10 @@ Exit 0 means the requested operation completed; individual changed, ambiguous or
 ### Complete records remain readable
 
 Every citation, review, retained-byte upgrade and recorded check validates the complete resulting record through the exported `validateRecord` before the conditional SDK commit. For example, adding review 10,001 to a citation with 10,000 reviews returns a typed `RecordValidationError` (`code: schema`, `limit: "10000"`, `observed: 10001`) with a remedy and writes nothing. `show` and per-citation verification use the same validator. Malformed siblings remain individually visible; recording waits until the complete state is valid. See [the write-path and schema-limit audit](docs/record-validation.md).
+
+Every workflow job granted write permissions, including CodeQL, Dependabot and
+reusable workflow calls, requires the exact repository `unbraind/pm-evidence`.
+The approval variable controls GitHub releases; it does not impose a local npm
+publishing hold. Maintainers run the prepublish checks and authenticate with npm
+for local publication. The first local publish uses `--provenance=false`; daily
+GitHub OIDC releases keep provenance enabled.
