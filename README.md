@@ -153,5 +153,9 @@ Exit 0 means the requested operation completed; individual changed, ambiguous or
 
 Every citation, review, retained-byte upgrade and recorded check validates the complete resulting record through the exported `validateRecord` before the conditional SDK commit. For example, adding review 10,001 to a citation with 10,000 reviews returns a typed `RecordValidationError` (`code: schema`, `limit: "10000"`, `observed: 10001`) with a remedy and writes nothing. `show` and per-citation verification use the same validator. Malformed siblings remain individually visible; recording waits until the complete state is valid. See [the write-path and schema-limit audit](docs/record-validation.md).
 
-Release jobs with write permissions are restricted to `unbraind/pm-evidence` at job
-level, so a fork cannot run publication with its own approval variable.
+Every workflow job granted write permissions, including CodeQL, Dependabot and
+reusable workflow calls, requires the exact repository `unbraind/pm-evidence`.
+The approval variable controls GitHub releases; it does not impose a local npm
+publishing hold. Maintainers run the prepublish checks and authenticate with npm
+for local publication. The first local publish uses `--provenance=false`; daily
+GitHub OIDC releases keep provenance enabled.
