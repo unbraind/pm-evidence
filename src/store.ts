@@ -6,6 +6,9 @@ import { digest, EvidenceError } from './core.ts';
 import { parseCitation, envelope, validateRecord } from './citation-schema.ts';
 import type { EvidenceEnvelope } from './citation-schema.ts';
 
+/** Synchronous and asynchronous producers share one fresh native-target callback contract. */
+type MutationAction<T, S> = (value: S, item: GetResult['item']) => { value: T; observation: string } | undefined | Promise<{ value: T; observation: string } | undefined>;
+
 /** Registered scalar JSON envelope keeps evidence on native items with SDK history. */
 export const FIELDS: SchemaFieldDefinition[] = [{ name: 'evidence_state', type: 'string', optional: true }];
 /** Missing fields have a valid first revision without bootstrapping item writes. */
@@ -42,12 +45,14 @@ export class Store {
     const verification = verifyHistoryEntries(await readHistoryEntries(getHistoryPath(this.options.workspace, id), id));
     if (!verification.ok) throw new EvidenceError('integrity', 'Evidence history integrity verification failed', 'Check pm health and restore verified history before retrying');
     const encoded = JSON.stringify(validated);
+    const target = (await this.getRaw(id)).item;
+    const relationship = typeof target.parent === 'string' ? { parent: target.parent } : { unset: ['parent'] };
     const owned = validated.citations;
     const files = [...new Set(owned.filter(entry => ['file', 'json'].includes(entry.descriptor.provider)).map(entry => entry.descriptor.source))].map(source => `path: ${source}\nscope: project\nnote: pm-evidence source identity relative to caller-selected root`);
-    await commitItemMutations({ pmRoot: this.options.workspace, author: await this.author(), transactionId: `evidence-${digest(JSON.stringify([id, expectedUpdatedAt, raw, encoded, observation]))}`, lockWaitMs: 10_000, mutations: [{ op: 'update', id, match: raw === undefined ? { key: 'updated_at', value: expectedUpdatedAt } : { key: 'evidence_state', value: raw }, options: { evidenceState: encoded, file: files, comment: [observation] } }] });
+    await commitItemMutations({ pmRoot: this.options.workspace, author: await this.author(), transactionId: `evidence-${digest(JSON.stringify([id, expectedUpdatedAt, raw, encoded, observation]))}`, lockWaitMs: 10_000, mutations: [{ op: 'update', id, match: expectedUpdatedAt === undefined ? { key: 'evidence_state', value: raw } : { key: 'updated_at', value: expectedUpdatedAt }, options: { ...relationship, evidenceState: encoded, file: files, comment: [observation] } }] });
   }
   /** Retry a bounded CAS mutation against fresh state, retaining other writers' records. */
-  async mutate<T>(id: string, action: (value: EvidenceState) => { value: T; observation: string } | undefined, expectedRevision?: number, expectedRaw?: unknown): Promise<T | undefined> {
+  async mutate<T>(id: string, action: MutationAction<T, EvidenceState>, expectedRevision?: number, expectedRaw?: unknown): Promise<T | undefined> {
     return this.mutateValue(id, raw => state(raw, id), action, expectedRevision, expectedRaw);
   }
   /** Build compact observations without accepting malformed sibling records for persistence. */
@@ -62,12 +67,12 @@ export class Store {
     }, expectedRevision, expectedRaw);
   }
   /** Reuse one native CAS/retry path for strict producers and per-entry observation recording. */
-  private async mutateValue<T, S extends EvidenceEnvelope>(id: string, parse: (raw: unknown) => S, action: (value: S) => { value: T; observation: string } | undefined, expectedRevision?: number, expectedRaw?: unknown): Promise<T | undefined> {
+  private async mutateValue<T, S extends EvidenceEnvelope>(id: string, parse: (raw: unknown) => S, action: MutationAction<T, S>, expectedRevision?: number, expectedRaw?: unknown): Promise<T | undefined> {
     let registered = false;
     for (let attempt = 0; attempt < 8; attempt++) {
       const target = await this.getRaw(id); const current = { ...target, value: parse(target.raw) };
       if ((expectedRevision !== undefined && expectedRevision !== current.value.revision) || (expectedRaw !== undefined && expectedRaw !== current.raw)) throw new EvidenceError('conflict', 'Expected evidence revision changed', 'Read evidence show and retry with its current revision');
-      const change = action(current.value); if (change === undefined) return undefined;
+      const change = await action(current.value, current.item); if (change === undefined) return undefined;
       current.value.revision++;
       validateRecord(current.value, current.item.id);
       if (!registered) { await this.register(); registered = true; continue; }

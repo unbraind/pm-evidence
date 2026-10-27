@@ -116,3 +116,33 @@ A read-only review found a valid `Policy` citation beneath a tab-containing ance
 `test/citation-roundtrip.test.ts` uses seed `0x26c17e` across **1,024 documents** (512 Markdown, 512 JSON) and **64 real non-git SDK trackers**. Every document has an accepted citation; the test reads retained bytes and native citation state back through the SDK, independently hashes the exact expected fragment, verifies unchanged `check`/`affected` behavior, then applies a constructed mutation. The measured statuses were **238 changed, 274 ambiguous, 256 missing and 256 current**, with zero foreign items. An additional **73 duplicate-heading selector attempts** were deliberately refused; an unambiguous line fragment in each of those documents still round-tripped. Sources cover tabs, LF/CRLF, Unicode and confusables, literal markup in headings, deep repeated headings, long ancestry/selected headings and JSON pointer keys beyond 4,096 characters.
 
 The exact review case passes. A mixed native envelope containing null, malformed, valid and duplicate entries reports indexed per-citation refusals, resolves the valid sibling, and preserves all existing evidence without recording an invalid complete state. Eight function-only negative controls each produce exactly one failing regression, including restoration of the legacy ancestry restriction and restoration of item-wide validation; all source bytes are restored afterward.
+# Criterion-bound adapter evaluation
+
+The criterion harness used public `unbraind/pm-changelog` origin/main at
+`3a99abc30c0d1b1284590e20b81dd8e43243e73e`. It archived only committed tracker
+files and README into a disposable non-git directory, checked repository public
+visibility, and disabled git discovery and the git executable for evidence work.
+The 202-item corpus supplied 20 items with existing acceptance criteria. Setup
+bound one existing criterion per selected item to a unique genuine README line,
+then made the 415 snapshot files read-only. Measurements performed no mutations.
+
+| Measurement | Result |
+| --- | ---: |
+| Tracker items | 202 |
+| Bound criteria / selected items | 20 / 20 |
+| Enumerated criterion facts including unbound criteria | 85 |
+| Current source bindings before edit | 20 |
+| Current / lost after editing one selected fragment through a source adapter | 19 / 1 |
+| Guarded source reads per invocation | 1 |
+| Full estimated tokens | 8,983 |
+| 800-token packet: estimated / returned / omitted | 754 / 6 / 79 |
+| Read-only snapshot files independently rehashed unchanged | 415 |
+| Truth assessed | false |
+
+The edit was an invocation-local supported source adapter snapshot. The underlying
+README and native tracker remained byte-identical; no original fleet files were
+modified. Token estimates use the documented UTF-8 bytes/4 method and are not a
+tokenizer measurement. The full packet includes unbound criteria, so its size is
+not comparable to a citation-only packet. Run
+`node test/criteria-real-data.acceptance.ts PUBLIC_CHECKOUT` to repeat on that
+checkout's origin/main; counts will follow the selected public revision.

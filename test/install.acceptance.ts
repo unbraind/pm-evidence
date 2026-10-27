@@ -22,10 +22,13 @@ for (const manager of ['npm', 'bun']) test(`packed ${manager} and ${manager === 
   const hostEnv = { ...env, PM_PATH: join(consumer, '.agents', 'pm') }; const runner = manager === 'npm' ? 'npx' : 'bunx'; const prefix = manager === 'npm' ? ['--no-install', 'pm'] : ['--bun', '--no-install', 'pm'];
   const pm = (args: string[]) => execute(consumer, runner, [...prefix, ...args], hostEnv);
   pm(['init', '--prefix', 'packed', '--defaults', '--agent-guidance', 'skip']); pm(['package', 'install', tarball]);
-  for (const name of ['cite', 'check', 'affected', 'review', 'show']) assert.ok(pm(['evidence', '--help']).includes(name));
-  pm(['create', 'Decision', '--id', 'packed-decision', '--title', 'Packed evidence decision']);
+  for (const name of ['cite', 'check', 'affected', 'review', 'show', 'bind', 'criteria']) assert.ok(pm(['evidence', '--help']).includes(name));
+  pm(['create', 'Decision', '--id', 'packed-decision', '--title', 'Packed evidence decision', '--ac', 'Packed criterion']);
   writeFileSync(join(consumer, 'doc.md'), 'Before\nOriginal claim\nAfter');
   const citation = JSON.parse(pm(['evidence', 'cite', 'packed-decision', 'doc.md', '--lines', '2-2', '--retain', '--json'])) as { citation: string };
+  const criterion = (JSON.parse(pm(['evidence', 'criteria', 'packed-decision', '--json'])) as { rows: { criterion: string; revision: string }[] }).rows[0];
+  pm(['evidence', 'bind', 'packed-decision', '--citation', citation.citation, '--criterion', criterion.criterion, '--criterion-revision', criterion.revision]);
+  assert.match(pm(['evidence', 'criteria', 'packed-decision', '--json']), /current-source/);
   assert.equal((JSON.parse(pm(['evidence', 'check', 'packed-decision', '--json'])) as { rows: { freshness: string }[] }).rows[0].freshness, 'current');
   writeFileSync(join(consumer, 'doc.md'), 'Before\nChanged claim\nAfter');
   const checked = JSON.parse(execute(consumer, manager, ['run', '--silent', 'evidence', '--', 'check', 'packed-decision', '--diff', '--json'], hostEnv)) as { rows: { freshness: string }[] }; assert.equal(checked.rows[0].freshness, 'changed');
@@ -34,4 +37,10 @@ for (const manager of ['npm', 'bun']) test(`packed ${manager} and ${manager === 
   assert.ok(pm(['evidence', 'show', 'packed-decision', '--json']).includes('lastCheck'));
   writeFileSync(join(consumer, 'embed.ts'), `import { check, affected, review, cite, replay, fileAdapter } from 'pm-evidence';\nconst result = await check(['packed-decision'], { workspace: process.env.PM_PATH, root: '.', record: false });\nif (result.rows[0].freshness !== 'changed' || [affected,review,cite,replay,fileAdapter.read].some(fn => typeof fn !== 'function')) throw Error('SDK failed');\nconsole.log('SDK accepted');\n`);
   assert.match(execute(consumer, manager === 'npm' ? process.execPath : 'bun', ['embed.ts'], hostEnv), /SDK accepted/);
+  const globalRoot = join(root, 'global'); const globalBin = join(globalRoot, 'bin'); mkdirSync(globalRoot); mkdirSync(globalBin);
+  const globalEnv = { ...hostEnv, NPM_CONFIG_PREFIX: globalRoot, BUN_INSTALL_GLOBAL_DIR: join(globalRoot, 'install'), BUN_INSTALL_BIN: globalBin };
+  const install = manager === 'npm' ? ['install', '--global', '--ignore-scripts'] : ['add', '--global', '--ignore-scripts'];
+  execute(consumer, manager, [...install, `@unbrained/pm-cli@${manifest.devDependencies['@unbrained/pm-cli']}`, tarball], globalEnv);
+  const globalResult = execute(consumer, join(globalBin, 'pm'), ['evidence', 'criteria', 'packed-decision', '--json'], globalEnv);
+  assert.match(globalResult, /lost-source/);
 });
