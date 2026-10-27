@@ -1,4 +1,3 @@
-import { PmClient } from '@unbrained/pm-cli/sdk';
 import { EvidenceError, requireInput } from './core.ts';
 import { citationListSchema, descriptorSchema } from './citation-schema.ts';
 import { snapshot, sourceIdentity } from './sources.ts';
@@ -25,7 +24,7 @@ export function verificationInput(items: readonly string[], options: AffectedOpt
   for (const value of [options.diff, options.record]) requireInput(value === undefined || typeof value === 'boolean', 'Verification flags must be booleans');
   requireInput(options.revision === undefined || options.revision === 'current' || options.revision === 'cited', 'Verification revision must be current or cited');
   requireInput(options.signal === undefined || options.signal instanceof AbortSignal, 'Verification signal must be an AbortSignal');
-  requireInput(options.client === undefined || options.client instanceof PmClient, 'Verification client must be a native PmClient');
+  requireInput(options.client === undefined || (typeof options.client === 'object' && options.client !== null && ['get', 'listAllComplete', 'schemaListFields', 'schemaAddField'].every(method => typeof Reflect.get(options.client!, method) === 'function')), 'Verification client must implement the public PmClient read and schema contract');
   if (options.changed !== undefined) requireInput(dense(options.changed, MAX_ENTRIES) && options.changed.every(text), 'Changed sources must be a bounded dense text array');
   if (options.adapters !== undefined) {
     requireInput(dense(options.adapters, 64), 'Adapters must be a dense array of at most 64 readers');

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { check, show } from '../index.ts';
 import type { citedTracker } from './helpers.ts';
-import type { Citation, validateRecord } from '../index.ts';
+import type { Citation, CriterionRef, validateRecord } from '../index.ts';
 
 /** Seeded scheduling independent of the package's validation or normalization. */
 export function random(seed: number): () => number { let state = seed; return () => (state = (Math.imul(state, 1664525) + 1013904223) >>> 0); }
@@ -45,6 +45,7 @@ export function apply(value: ReturnType<typeof validateRecord>, boundary: Bounda
       operand = Array.from({ length: spec.length }, (_, i) => {
         const entry: unknown = structuredClone(prior[0]);
         if (boundary.path.length === 1) (entry as Citation).id = `ev-${i.toString(16).padStart(24, '0')}`;
+        if (key === 'criteria') (entry as CriterionRef).text = `Synthetic criterion ${i}`;
         return entry;
       });
     } else {
@@ -63,7 +64,7 @@ export function apply(value: ReturnType<typeof validateRecord>, boundary: Bounda
 /** Complete valid seed includes every optional native package field and selector witness. */
 export function full(citation: Citation): ReturnType<typeof validateRecord> {
   const row = { item: citation.provenance.item, citation: citation.id, resolution: 'resolved' as const, freshness: 'current' as const, currentResolution: 'resolved' as const, oldDigest: citation.fragmentDigest, currentDigest: citation.fragmentDigest, sourceChanged: false, currentRevision: citation.descriptor.revision, replay: false, diff: { type: 'source-data' as const, old: ['Claim'], current: ['Claim'] }, code: 'missing' as const, remedy: 'Retry', citationIndex: 1 };
-  return { version: 1, revision: 1, citations: [{ ...structuredClone(citation), descriptor: { ...citation.descriptor, anchor: { quote: 'Claim', before: '', after: '', sectionPath: ['Parent'] }, jsonEncoding: 'source-bytes-v1' }, retained: 'Q2xhaW0=', reviews: [{ id: 'review-fixture', author: 'fixture', at: citation.provenance.at, disposition: 'still-valid', reason: 'Reviewed', replacement: citation.id }], lastCheck: row, lastCheckedAt: citation.provenance.at }] };
+  return { version: 1, revision: 1, citations: [{ ...structuredClone(citation), descriptor: { ...citation.descriptor, anchor: { quote: 'Claim', before: '', after: '', sectionPath: ['Parent'] }, jsonEncoding: 'source-bytes-v1' }, retained: 'Q2xhaW0=', reviews: [{ id: 'review-fixture', author: 'fixture', at: citation.provenance.at, disposition: 'still-valid', reason: 'Reviewed', replacement: citation.id }], criteria: [{ text: 'Synthetic criterion', revision: citation.fragmentDigest }], lastCheck: row, lastCheckedAt: citation.provenance.at }] };
 }
 
 

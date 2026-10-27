@@ -57,6 +57,8 @@ All commands use the native host renderer: TOON by default, `--json` for JSON. U
 | affected | `pm evidence affected --changed README.md --depth 2 --budget 800` | Items/Decisions requiring review and bounded relationship paths |
 | review | `pm evidence review decision-id --citation ev-id --disposition still-valid --reason "Reviewed the changed fragment"` | Durable, fenced, retry-safe observation |
 | show | `pm evidence show decision-id` | Citation metadata, reviews, evidence revision and last check |
+| criteria | `pm evidence criteria decision-id --root . --budget 800` | Read-only criterion revisions and current source support facts |
+| bind | `pm evidence bind decision-id --citation ev-id --criterion "Expected outcome" --criterion-revision sha256` | Bind an existing citation to the exact revision reported by criteria |
 
 Choose exactly one cite selector: `--lines 3-5`, `--heading "Release policy"` (first paragraph below a unique ATX heading), or `--pointer /policy/a~1b` (JSON key `a/b`). An empty pointer selects the JSON root. JSON digests preserve exact selected value bytes, including large integer and exponent lexemes, internal whitespace and escape spelling. Duplicate decoded keys refuse as ambiguous; older lossy JSON records require explicit re-anchoring after source changes. Line ranges are inclusive and one-based. Quotes can move only with matching saved surroundings and, for Markdown headings, matching section ancestry; an unrelated surviving example never proves a cited passage current. Duplicates refuse as ambiguous. Changes inside a fragment can be located by unique exact surrounding boundaries. No fuzzy re-binding occurs.
 
@@ -95,6 +97,72 @@ Malformed citations produce individual `code:schema` rows with a one-based `cita
 
 Review dispositions are `still-valid`, `re-anchored`, `superseded`, `invalid`. The reason is required. Re-anchoring follows the unique exact current fragment and adds a separate citation; the original stays intact. To repair an ambiguous anchor, pass an explicit replacement `--lines`, `--heading` or `--pointer` selector with the re-anchored disposition. `--expected-revision` can require the evidence revision returned by show. Distinct reviewers cannot overwrite each other's observations; identical retries deduplicate. Other dispositions record the review without silently rewriting evidence.
 
+## Criterion-bound source support
+
+Use `pm evidence criteria item-id --json` to discover exact criterion text and
+revision, then `pm evidence bind` to attach an existing citation to that pair.
+Run `criteria` again after editing a source or a criterion. With no IDs it reads
+the certified complete tracker. Both TOON and JSON use the existing token budget
+and explicit omission receipts. The command is always read-only.
+
+`criterionFacts(ids, options)` is the typed adapter for pm-lint's declared witness
+validation and pm-context's criterion evidence packing. Its rows join item,
+criterion, current revision, bound revision and citation identity with independent
+resolution/freshness facts. Consumers retain their own validation and packing
+engines; the adapter does not run tests, rank evidence or declare acceptance.
+`bindCriterion({item,citation,criterion:{text,revision}}, options)` persists through
+the same registered evidence field and fenced SDK item mutation as citations.
+
+| `support` | Meaning |
+| --- | --- |
+| `current-source` | This exact criterion generation has a uniquely resolved, byte-current fragment |
+| `lost-source` | Its bound fragment changed, disappeared or cannot resolve unambiguously |
+| `criterion-changed` | The bound criterion generation was edited, removed or replaced |
+| `ambiguous-criterion` | Identical criterion text occurs more than once |
+| `unbound` | The current criterion generation has no citation binding |
+| `unknown` | Malformed/foreign records, unverifiable history or a concurrent tracker edit prevent a fact |
+
+Every row has `truthAssessed:false`. A resolving citation is never proof that the
+criterion is true. Multiple citations stay separate rows: one current citation
+does not conceal another lost citation. Old generations remain visible alongside
+unbound replacement criteria. Re-anchored citations need explicit new bindings;
+review dispositions do not silently refresh a binding.
+
+Criterion boundaries and whitespace semantics come from SDK
+`splitAcceptanceCriteria`. Revisions derive from verified SDK history replay,
+not item ordinals or content hashes alone. A unique unchanged criterion retains
+its generation across reordering, unrelated criterion edits and ordinary item
+updates. Removing and restoring its text produces a new generation; duplicate
+text cannot be bound. Criterion edits race safely with binding: every retry reads
+the current native item and history. Under the SDK item lease, the writer compares
+the exact prior evidence envelope (including absence) and revalidates the criterion
+generation before publishing. Timestamps are never revisions. Already-present
+bindings are checked against current state too. Read-only facts recheck both the
+exact envelope and criterion generations, including edit-and-restore cycles.
+
+`criterionBindingSchema`, `criterionRefSchema`, and `criterionFactSchema` are
+exported runtime schemas with inferred public types. Citation bindings are
+additive optional metadata, so existing citations remain readable. A bad citation
+produces its own `citationIndex` and typed remedy while valid siblings continue;
+foreign envelopes are preserved. `EvidenceError.code` and `.remedy` also describe
+invalid requests, stale revisions and budget refusals. Bounds are 64 bindings per
+citation, 10,000 items/citations/fact rows/history entries per item, and 65,536
+characters per criterion. Split larger checks into explicit batches.
+
+The adapter accepts the shared source options and `budget`; `record:true`,
+`revision:'cited'` and `diff:true` refuse because facts describe current sources.
+There is no binding import/export/sync engine or frozen recovery plan. Durable
+state stays in native SDK items; the producer schemas govern JSON round trips.
+Local verified history is required for generation identity. The existing
+backend-aware mutation follow-up also covers remote history transport.
+
+See [the runnable criterion example](examples/criteria.ts). A public pm-changelog
+snapshot containing 202 items supplied 20 genuine criterion bindings. Verification
+enumerated 85 criterion rows with one source read; an adapter-supplied edit to one
+fragment left **19 current and 1 lost**. All **415 read-only snapshot files** were
+byte-identical afterward. The 800-token response used **754 estimated tokens**,
+returned 6 rows and disclosed 79 omissions. See [the measurement](docs/real-data.md).
+
 ## Agent handoff
 
 Add this to a project's AGENTS.md:
@@ -131,7 +199,7 @@ await review('decision-id', {
 
 `SourceAdapter` is `{ provider: string; read(source, {root,maxBytes,signal}): Promise<{text,revision}> }`. Revision must equal the SHA-256 UTF-8 content digest. Pass adapters via `options.adapters`; `fileAdapter` and `jsonAdapter` are exported defaults. Source identity stays relative to the caller root. Adapters are trusted caller-owned readers; no network adapter is included.
 
-`check` accepts `diff`, `budget`, `record` and `revision:'cited'|'current'`. Historical replay requires retained bytes and can resolve while freshness is changed. `replay(citation)` returns the verified retained original; it refuses missing or corrupted bytes. Full durable citations remain in the registered SDK field on the native item, while show provides compact metadata. Options expose `maxBytes`, `timeoutMs`, cancellation `signal` and an optional native `client`. Before an evidence mutation, SDK history reads and `verifyHistoryEntries` independently verify the authoritative history chain, even after the SDK event cache has been primed. Corrupt history now refuses the mutation. This is a preflight check; the SDK transaction still owns locking and field preconditions. Remote backend mutation conformance awaits a backend-aware SDK transaction contract. See [ARCHITECTURE.md](ARCHITECTURE.md) for selectors, status axes, storage, limits and privacy.
+`check` accepts `diff`, `budget`, `record` and `revision:'cited'|'current'`. Historical replay requires retained bytes and can resolve while freshness is changed. `replay(citation)` returns the verified retained original; it refuses missing or corrupted bytes. Full durable citations remain in the registered SDK field on the native item, while show provides compact metadata. Options expose `maxBytes`, `timeoutMs`, cancellation `signal` and an optional native `client`. Inside an evidence mutation, SDK history reads and `verifyHistoryEntries` verify the authoritative history chain against the locked current document, even after the SDK event cache has been primed. Corrupt history refuses the mutation. SDK `mutateItem` owns the item lease, persistence fence, native normalization, history and rollback; SDK linked-artifact helpers merge source links. Comments and evidence are published together without replacing relationships or other native fields. There are no package transaction IDs or frozen journal plans to replay; retries inspect current evidence under an exact-state precondition. Remote backend mutation conformance awaits a backend-aware SDK transaction contract. See [ARCHITECTURE.md](ARCHITECTURE.md) for selectors, status axes, storage, limits and privacy.
 
 ## Real-data proof
 

@@ -2,6 +2,12 @@ import { defineExtension } from '@unbrained/pm-cli/sdk/authoring';
 import { register } from './src/commands.ts';
 /** Cite, revalidate, traverse affected context and record explicit evidence reviews. */
 export { cite, check, affected, review, show, replay } from './src/evidence.ts';
+/** Criterion revision bindings and read-only facts for lint/context adapters. */
+export { bindCriterion, criterionFacts, criterionBindingSchema, criterionFactSchema } from './src/criteria.ts';
+/** Runtime-derived exact criterion revision and adapter contracts. */
+export { criterionRefSchema } from './src/citation-schema.ts';
+export type { CriterionRef } from './src/citation-schema.ts';
+export type { CriterionBinding, CriterionFact } from './src/criteria.ts';
 /** Custom source readers share the built-in root, deadline and revision contract. */
 export { fileAdapter, jsonAdapter } from './src/sources.ts';
 /** Typed refusals and deterministic output cost estimates for consumers. */

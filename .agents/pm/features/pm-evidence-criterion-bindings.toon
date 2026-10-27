@@ -1,0 +1,57 @@
+id: pm-evidence-criterion-bindings
+title: Report criterion bindings that lose current source support
+description: "Overlap audit: core SDK owns criterion splitting, certified item reads, history and conditional mutations. pm-lint validates declared witnesses; pm-context packs criterion evidence. This package supplies exact source-resolution and freshness facts through an adapter; it does not reproduce witness validation or packing."
+type: Feature
+status: in_progress
+priority: 2
+tags: []
+created_at: "2026-10-27T05:26:08.794Z"
+updated_at: "2026-10-27T07:39:49.655Z"
+author: codex-agent
+acceptance_criteria: Editing one cited fragment invalidates only its bound criteria; A criterion edit invalidates its old bindings; Resolving a citation never labels it proof of truth; Typed SDK and agent-sized TOON/JSON CLI expose facts with actionable refusals; Real public-tracker copy and seeded SDK state-readback tests validate the contract without git
+comments[9]{created_at,author,text}:
+  "2026-10-27T05:27:08.257Z",codex-agent,"Overlap rechecked against core SDK declarations and sibling sources: SDK splitAcceptanceCriteria owns criterion parsing, listAllComplete plus certification owns corpus scope, verified history replay owns criterion generation, commitItemMutations owns lock-held CAS. pm-lint witnesses.ts validates declared witnesses; pm-context evidence-packing.ts packs declared criterion groups. Add revision-bound source facts adapter only. Plan: additive citation binding schema, bind and criteria commands, history-derived criterion generations, native-revision CAS, 500 seeded readback sequences, interleavings, producer round trips, packed install journeys, read-only public snapshot measurement, CI npm and Bun full release gates."
+  "2026-10-27T05:43:57.036Z",codex-agent,"Packed global installs exposed an existing verifier bug: instanceof PmClient rejected the genuine host-injected client when global and project-local installs loaded separate SDK copies. Replaced constructor identity with the public read/schema method contract; no executable-path or symlink SDK discovery. Initial global npm and Bun journeys both failed with the native-client refusal, providing a real negative control. Rerunning all four installation modes through the final packed artifact."
+  "2026-10-27T05:46:00.193Z",codex-agent,"Validation: 500 seeded sequences, 1500 random operations, 500 native SDK state readbacks, 21 preserved native fields and 20 distinct bindings passed (seed 0xc17e2026). Old criterion/source replays, whitespace and CRLF variants, relationships, custom active status and changing ambient focus are included. pm test --run --progress passed the focused 8-test suite. Four isolated function-only negative controls each failed exactly one behavioral regression: removed binding producer, content-only generation, resolution-only support and evidence-only CAS fence; sources restored afterward. Public read-only pm-changelog snapshot 3a99abc30c0d1b1284590e20b81dd8e43243e73e: 202 items, 20 bound criteria, 85 fact rows, 20 current before edit, 19 current and 1 lost after one adapter-supplied fragment edit; 1 source read per invocation; 415 snapshot files rehashed unchanged; 800-token packet used 754 estimated tokens with 6 returned and 79 omitted. No git executable or enclosing repository was available to evidence operations. Full release gates delegated to CI at unchanged thresholds; no merge or release authorized."
+  "2026-10-27T05:48:10.964Z",codex-agent,"Implementation and reviewable evidence are complete. Typecheck, lint, zero duplication and docstrings pass. Packed npm global, Bun global, npx/bunx and project-local journeys now exercise criterion binding as well as verification; the host client is validated by its public SDK methods across separate install copies. Local focused coverage and final packed acceptance are running; PR CI supplies full npm plus Bun release-gate evidence at unchanged 100/100/100/100 thresholds. Existing backend-conformance item retains the verified remote SDK limitation. Releasing the implementation claim for orchestrator review; keep this item in progress until independently verified."
+  "2026-10-27T06:05:48.492Z",codex-agent,"CI run 40457567679 measured all four coverage dimensions at 100%, but 2 of 154 tests failed in the pre-existing schema-boundary generator: new optional criterion bindings were traversed without a corresponding seeded value, producing Reflect.get on undefined. Extending the model fixture to include every new native citation field and rerunning those exact failing property tests before the next CI gate. No runtime support criterion failed."
+  "2026-10-27T06:15:02.528Z",codex-agent,"Extended the schema-derived complete-record seed with criterion metadata, and generate unique criterion references at array boundaries. This exercises every new optional field through the existing full-record SDK readback law rather than excluding it. Typecheck, lint and zero duplication pass; the two exact CI-failing property tests are running locally. Previous final local acceptance passed 25 targeted tests, 2 packed npm/Bun journeys across global, npx/bunx and project-local installs, and all four adapter coverage dimensions. Isolated-config tracker health passes. Pushing the fixture correction for a fresh complete CI release gate; no runtime code or thresholds changed."
+  "2026-10-27T07:08:56.987Z",codex-agent,"Re-review blocking finding accepted. General rule: wall-clock timestamps are not revisions, so stale-state writes must fence all state they derive from with an SDK lock-held precondition. Repeated updated_at values can make timestamp-only CAS erase a persisted peer review. Auditing every SDK/CLI mutation, read-only fact freshness check and transaction identity in the package; will use a fixed-clock non-git adversarial test across all producers and failure-on-revert proof. Worktree is clean and origin/main has no commits missing from this branch. No additional inline or review findings are currently posted on the PR; the supplied orchestrator finding is authoritative."
+  "2026-10-27T07:33:37.473Z",codex-agent,"Class audit complete: Store.commit is the sole evidence writer, shared by cite, retain, review, re-anchor, bind and recorded check. Timestamp-dependent CAS and transaction identities are removed. Public SDK mutateItem compares the exact prior envelope, including absence, inside its fenced item lease; binding revalidates criterion history under that same lease. SDK native normalization/history/rollback, annotation parsing and linked-artifact deduplication remain in use; unrelated native fields and relationships are never replaced. Read-only criterion facts now compare criterion generations as well as exact evidence, detecting fixed-clock criterion edits and ABA cycles. Existing race/store regressions passed 4/4; fixed-clock SDK/non-git/CLI regressions passed 4/4 with 48 writer/boundary interleavings. Function-only revert proof: node test/criteria-revert.acceptance.ts passed six expected-failure controls, including timestamp-only CAS losing a persisted peer review and timestamp-only read freshness missing an ABA edit. Source bytes restored after every control. No posted non-blocking findings were found. Full gates are configured with two workers and unchanged coverage thresholds."
+  "2026-10-27T07:39:45.006Z",codex-agent,"Final focused checks: expanded fixed-clock CLI bind/check/criteria assertions passed in both JSON and TOON, including truthful skipped-recording receipts and preserved peer reviews. Typecheck, lint, zero duplication and docstrings passed. Revalidated the read-only public pm-changelog snapshot at 2eb8d9f3cf8bd4b101962639a12a23359b77ea29: 202 items, 20 bound criteria, 85 facts, 19 current plus 1 lost after one fragment edit, one source read, 415 unchanged snapshot files; bounded packet 754 tokens with 6 returned and 79 omitted. Releasing the claim for review while fresh full npm and Bun CI gates run with two workers; keep the feature in progress until the orchestrator verifies it."
+files[22]{path,scope}:
+  ARCHITECTURE.md,project
+  index.ts,project
+  scripts/coverage-gate.ts,project
+  src/citation-schema.ts,project
+  src/commands.ts,project
+  src/criteria.ts,project
+  src/store.ts,project
+  src/verification.ts,project
+  test/clock-race.preload.ts,project
+  test/clock-races.test.ts,project
+  test/coalesced.test.ts,project
+  test/criteria-helpers.ts,project
+  test/criteria-model.test.ts,project
+  test/criteria-races.test.ts,project
+  test/criteria-real-data.acceptance.ts,project
+  test/criteria-revert.acceptance.ts,project
+  test/criteria.test.ts,project
+  test/install.acceptance.ts,project
+  test/public-copy.ts,project
+  test/record-boundaries.ts,project
+  test/record-law.test.ts,project
+  test/store-boundaries.ts,project
+tests[4]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node --test --test-concurrency=1 test/criteria.test.ts test/criteria-races.test.ts,project,codex-agent,"2026-10-27T05:41:38.513Z",local_mutation,feat/criterion-bound-citation-coverage
+  node --test --test-concurrency=1 test/criteria-model.test.ts test/criteria-races.test.ts,project,codex-agent,"2026-10-27T05:46:03.200Z",local_mutation,feat/criterion-bound-citation-coverage
+  "node --test --test-concurrency=1 --test-name-pattern=\"every schema boundary|seeded mutation law\" test/record-law.test.ts",project,codex-agent,"2026-10-27T06:14:59.032Z",local_mutation,feat/criterion-bound-citation-coverage
+  node --test --test-concurrency=1 test/clock-races.test.ts,project,codex-agent,"2026-10-27T07:34:02.565Z",local_mutation,feat/criterion-bound-citation-coverage
+docs[6]{path,scope}:
+  ARCHITECTURE.md,project
+  docs/real-data.md,project
+  docs/record-validation.md,project
+  docs/sdk-adoption-1025.md,project
+  examples/criteria.ts,project
+  README.md,project
+body: ""

@@ -81,6 +81,7 @@ test('verification uses one strict boundary for dense arrays, finite bounds and 
   const invalid: unknown[] = [null, [], {}, { ...options, unknown: true }, { ...options, root: 3 }, { ...options, author: '' }, { ...options, diff: 1 }, { ...options, record: 'yes' }, { ...options, revision: 'past' }, { ...options, signal: {} }, { ...options, client: {} }, { ...options, changed: Array(1) }, { ...options, changed: [''] }, { ...options, adapters: Array(1) }, { ...options, adapters: Array(65).fill(adapter) }, { ...options, adapters: [null] }, { ...options, adapters: [{ provider: '', read: adapter.read }] }, { ...options, adapters: [{ provider: 'file', read: 1 }] }, { ...options, adapters: [{ ...adapter, extra: true }] }, { ...options, adapters: [adapter, adapter] }];
   for (const key of ['maxBytes', 'timeoutMs', 'budget', 'depth', 'limit']) for (const value of [NaN, Infinity, -Infinity, Number.MAX_VALUE, -1, 0.5, '1', null]) invalid.push({ ...options, [key]: value });
   for (const option of invalid) await assert.rejects(check([], option as CheckOptions), { code: 'invalid' });
+  for (const client of [null, 3]) assert.throws(() => verificationInput([], { ...f.options, client } as unknown as CheckOptions), { code: 'invalid' });
   verificationInput([], { ...f.options, client: f.client, diff: false, record: false, revision: 'current', maxBytes: 1, timeoutMs: 1, budget: 1, depth: 0, limit: 1, changed: [] });
   verificationInput([], { ...f.options, maxBytes: 16777216, timeoutMs: 60000, budget: 1000000, depth: 16, limit: 10000 });
   assert.equal(reads, 0);

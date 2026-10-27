@@ -2,7 +2,7 @@
 
 `validateRecord` is the exported full-state validator in `src/citation-schema.ts`. Its state and citation types derive from the same runtime schema. `show` reads it through `Store.get`/`state`; `check` and `affected` call it separately for each citation through `parseCitation`, so a malformed entry cannot hide valid siblings.
 
-The only evidence writer is `Store.commit`, which validates and copies the **complete resulting state**, then serializes that validated copy for the conditional SDK transaction. The SDK compares the exact previously read field (or the native creation revision). Validation therefore cannot authorize a different target revision. Retry reads the target again and rebuilds the result. `mutateValue` also validates the complete proposal before schema registration; registration is followed by a fresh SDK read and reconstruction, including cancellation and expected-revision checks.
+The only evidence writer is `Store.commit`, which validates and copies the **complete resulting state**, then serializes that validated copy for the fenced SDK item mutation. Inside its item lease, the writer compares the exact previously read field, including absence, and validates any criterion precondition. Repeating wall-clock values cannot authorize stale state. Validation therefore cannot authorize a different target revision. Retry reads the target again and rebuilds the result. `mutateValue` also validates the complete proposal before schema registration; registration is followed by a fresh SDK read and reconstruction, including cancellation and expected-revision checks.
 
 Write-path audit:
 
