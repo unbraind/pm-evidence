@@ -1,6 +1,6 @@
 {
   "name": "pm-evidence",
-  "version": "2026.10.23",
+  "version": "2026.10.28",
   "description": "Exact source fragment freshness and bounded evidence review for agents",
   "repository": {
     "type": "git",
