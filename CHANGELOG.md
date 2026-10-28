@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Transfer selected retained citations as validated portable bundles ([pm-evidence-portable-bundles](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-portable-bundles.toon))
+
 ## 2026.10.28 - 2026-10-28
 
 ### Added

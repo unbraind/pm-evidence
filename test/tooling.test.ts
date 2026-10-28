@@ -656,7 +656,8 @@ test('identity privacy distinguishes relative labels from absolute home prefixes
 
 /** Environment boundaries remove inherited policy without discarding unrelated values. */
 test('npm subprocess policy isolates user configuration case-insensitively', () => {
-  const value = npmEnvironment({ PATH: 'safe', npm_config_allow_scripts: 'all', NPM_CONFIG_USERCONFIG: 'private', npm_config_userconfig: 'private' });
+  const value = npmEnvironment({ PATH: 'safe', npm_config_allow_scripts: 'all', NPM_CONFIG_USERCONFIG: 'private', npm_config_userconfig: 'private', NPM_MEDIA_SERVER: 'synthetic', NPM_TOKEN: 'synthetic', NODE_AUTH_TOKEN: 'synthetic', GH_TOKEN: 'synthetic', GITHUB_TOKEN: 'synthetic' });
   assert.equal(value.PATH, 'safe'); assert.equal(value.npm_config_userconfig, devNull);
   assert.equal(value.NPM_CONFIG_USERCONFIG, undefined); assert.equal(value.npm_config_allow_scripts, undefined);
+  for (const key of ['NPM_MEDIA_SERVER', 'NPM_TOKEN', 'NODE_AUTH_TOKEN', 'GH_TOKEN', 'GITHUB_TOKEN']) assert.equal(value[key], undefined);
 });
