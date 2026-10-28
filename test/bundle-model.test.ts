@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { dedupeLinkedArtifacts, parseAnnotationTextInput } from '@unbrained/pm-cli/sdk';
+import { artifactKey, parseAnnotationTextInput } from '@unbrained/pm-cli/sdk';
+import type { LinkedArtifact } from '@unbrained/pm-cli/sdk';
 import { bundleTarget, cite, exportBundle, importBundle, inspectBundle, replay, review, setBundleConsent, validateBundle } from '../index.ts';
 import type { Citation, CitationBundle } from '../index.ts';
-import { bundleFixture, authorization, sameNative } from './bundle-helpers.ts';
+import { bundleFixture, authorization, nativeFileInputs, sameNative } from './bundle-helpers.ts';
 
 /** Deterministic integer choices make every generated sequence reproducible. */
 function random(seed: number): () => number { let value = seed; return () => (value = (Math.imul(value, 1664525) + 1013904223) >>> 0); }
@@ -18,9 +19,11 @@ test('500 seeded transfer sequences model SDK read-back, older replays, CRLF, na
     for (const id of [parent, dependency]) await f.client.create({ id, type: 'Task', title: 'Native model relationship', unset: ['parent', 'assignee', 'sprint', 'release'] });
     const custom = `phase_${next().toString(36)}`;
     await f.client.schemaAddStatus(custom, { role: [(['active', 'blocked'] as const)[next() % 2]] });
-    await f.client.update(f.target, { title: 'Native title', description: '  Native\r\n description  ', body: 'Native\r\nbody\n', status: custom, parent, dep: [`id=${dependency},kind=depends_on`], tags: 'native,bundle-model', priority: 1, acceptanceCriteria: ' Native outcome ; Second ', note: ['Native note'], learning: ['Native learning'], file: ['path: original.md\nscope: project'], doc: ['path: native-doc.md\nscope: project'], test: ['command: node --version'], unset: ['assignee', 'sprint', 'release'] });
+    await f.client.update(f.target, { title: 'Native title', description: '  Native\r\n description  ', body: 'Native\r\nbody\n', status: custom, parent, dep: [`id=${dependency},kind=depends_on`], tags: 'native,bundle-model', priority: 1, acceptanceCriteria: ' Native outcome ; Second ', note: ['Native note'], learning: ['Native learning'], file: nativeFileInputs(`Native annotation ${batch}`), doc: ['path: native-doc.md\nscope: project'], test: ['command: node --version'], unset: ['assignee', 'sprint', 'release'] });
     let baseline = (await f.client.get(f.target, { full: true })).item;
-    const nativeFiles = baseline.files ?? []; const comments = (baseline.comments ?? []).map(entry => ({ text: entry.text, author: entry.author }));
+    let nativeFiles = new Map((baseline.files ?? []).map(file => [artifactKey(file), file]));
+    let expectedFiles = new Map<string, LinkedArtifact>(nativeFiles);
+    const comments = (baseline.comments ?? []).map(entry => ({ text: entry.text, author: entry.author }));
     const model = new Map<string, { entry: CitationBundle['entries'][number]; consent: 'granted' | 'revoked'; reviews: string[] }>();
     const history: CitationBundle[] = [f.bundle]; const selected = [...f.citations]; const granted = new Set(selected);
     const sourceModel = new Map(f.citations.map((id, index) => [id, ['  Exact\tclaim\r\nSecond line  ', '9007199254740993', 'SECRET-UNSELECTED'][index]]));
@@ -33,6 +36,7 @@ test('500 seeded transfer sequences model SDK read-back, older replays, CRLF, na
     let revision = 0; let targetComments = baseline.comments?.length ?? 0;
     for (let sequence = 0; sequence < 20; sequence++) {
       for (let operation = 0; operation < 4; operation++) {
+        const beforeRevision = revision;
         const choice = next() % 9;
         if (choice === 0) {
           const id = selected[next() % selected.length]; const consent = granted.has(id) ? 'revoked' : 'granted';
@@ -54,8 +58,9 @@ test('500 seeded transfer sequences model SDK read-back, older replays, CRLF, na
         } else if (choice === 4) {
           await f.client.focus(next() % 2 === 0 ? parent : dependency);
           const variants = ['Native text', '  Native text  ', 'Native\r\ntext', 'Native\ntext'];
-          await f.client.update(f.target, { description: variants[next() % variants.length], parent, unset: ['assignee', 'sprint', 'release'] });
+          await f.client.update(f.target, { description: variants[next() % variants.length], parent, file: [`path=selected.md,scope=project,note=Native revision ${sequence}`], unset: ['assignee', 'sprint', 'release'] });
           baseline = (await f.client.get(f.target, { full: true })).item;
+          nativeFiles = new Map((baseline.files ?? []).map(file => [artifactKey(file), file])); expectedFiles = new Map(nativeFiles);
         } else if (choice === 5) {
           const source = 'variant.md'; const text = [' Leading spaces  ', 'First\r\nSecond  ', 'First\nSecond  ', '\tUnicode λ\r\n É '][next() % 4];
           await writeFile(join(f.root, source), text);
@@ -78,11 +83,15 @@ test('500 seeded transfer sequences model SDK read-back, older replays, CRLF, na
           }
           revision++; targetComments++;
         }
+        if (revision !== beforeRevision) for (const { entry } of model.values()) {
+          const file = { path: entry.descriptor.source, scope: 'project' as const, note: 'pm-evidence source identity relative to caller-selected root' }; const key = artifactKey(file);
+          if (!expectedFiles.has(key)) expectedFiles.set(key, file);
+        }
         const native = (await f.client.get(f.target, { full: true })).item; sameNative(baseline, native);
         const actual = native.evidence_state === undefined ? { revision: 0, citations: [] as Citation[] } : JSON.parse(String(native.evidence_state)) as { revision: number; citations: Citation[] };
         assert.equal(actual.revision, revision); assert.equal(actual.citations.length, model.size); assert.equal(native.comments?.length ?? 0, targetComments);
         assert.deepEqual((native.comments ?? []).map(entry => ({ text: entry.text, author: entry.author })), comments);
-        assert.deepEqual(native.files ?? [], dedupeLinkedArtifacts([...nativeFiles, ...[...model.values()].map(({ entry }) => ({ path: entry.descriptor.source, scope: 'project' as const, note: 'pm-evidence source identity relative to caller-selected root' }))]));
+        assert.deepEqual(native.files ?? [], [...expectedFiles.values()]);
         for (const citation of actual.citations) {
           const expected = model.get(citation.origin!.citation)!; assert.ok(expected);
           assert.deepEqual(citation.descriptor, expected.entry.descriptor); assert.equal(citation.retained, expected.entry.retained); assert.equal(citation.fragmentDigest, expected.entry.fragmentDigest);
@@ -94,7 +103,9 @@ test('500 seeded transfer sequences model SDK read-back, older replays, CRLF, na
         const files = new Set(native.files?.map(entry => entry.path)); assert.ok(files.has('original.md'));
         for (const { entry } of model.values()) assert.ok(files.has(entry.descriptor.source));
         for (const file of native.files ?? []) if (file.path !== 'original.md') {
-          assert.equal(file.scope, 'project'); assert.equal(file.note, 'pm-evidence source identity relative to caller-selected root');
+          const owner = nativeFiles.get(artifactKey(file));
+          if (owner !== undefined) assert.deepEqual(file, owner);
+          else { assert.equal(file.scope, 'project'); assert.equal(file.note, 'pm-evidence source identity relative to caller-selected root'); }
         }
         const sourceNative = (await f.client.get(f.item, { full: true })).item;
         const sourceState = JSON.parse(String(sourceNative.evidence_state)) as { citations: Citation[] };

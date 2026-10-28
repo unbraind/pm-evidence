@@ -23,13 +23,13 @@ for (const manager of ['npm', 'bun']) test(`packed ${manager} and ${manager === 
   const pm = (args: string[]) => execute(consumer, runner, [...prefix, ...args], hostEnv);
   pm(['init', '--prefix', 'packed', '--defaults', '--agent-guidance', 'skip']); pm(['package', 'install', tarball]);
   for (const name of ['cite', 'check', 'affected', 'review', 'show', 'bind', 'criteria', 'bundle-target', 'bundle-consent', 'bundle-export', 'bundle-import', 'bundle-inspect']) assert.ok(pm(['evidence', '--help']).includes(name));
-  pm(['create', 'Decision', '--id', 'packed-decision', '--title', 'Packed evidence decision', '--ac', 'Packed criterion']);
+  pm(['create', 'Decision', '--id', 'packed-decision', '--title', 'Packed evidence decision', '--ac', 'Packed criterion', '--parent', 'none', '--file', 'path=doc.md,scope=project,note=Packed source annotation']);
   writeFileSync(join(consumer, 'doc.md'), 'Before\nOriginal claim\nAfter');
   const citation = JSON.parse(pm(['evidence', 'cite', 'packed-decision', 'doc.md', '--lines', '2-2', '--retain', '--json'])) as { citation: string };
   const sourceTarget = JSON.parse(pm(['evidence', 'bundle-target', 'packed-decision', '--json'])) as { revision: string };
   pm(['evidence', 'bundle-consent', 'packed-decision', '--citation', citation.citation, '--expected-revision', sourceTarget.revision, '--consent', 'granted']);
   pm(['evidence', 'bundle-export', 'packed-decision', '--citation', citation.citation, '--out', 'bundle.json']);
-  pm(['create', 'Decision', '--id', 'packed-recipient', '--title', 'Portable recipient', '--parent', 'none']);
+  pm(['create', 'Decision', '--id', 'packed-recipient', '--title', 'Portable recipient', '--parent', 'none', '--file', 'path=doc.md,scope=project,note=Packed recipient annotation']);
   const recipient = JSON.parse(pm(['evidence', 'bundle-target', 'packed-recipient', '--json'])) as { revision: string };
   const bundleArgs = ['bundle.json', '--item', 'packed-recipient', '--expected-revision', recipient.revision, '--authorize'];
   pm(['evidence', 'bundle-inspect', ...bundleArgs]); pm(['evidence', 'bundle-import', ...bundleArgs, '--preview']);
@@ -44,6 +44,10 @@ for (const manager of ['npm', 'bun']) test(`packed ${manager} and ${manager === 
   pm(['evidence', 'review', 'packed-decision', '--citation', citation.citation, '--disposition', 'invalid', '--reason', 'Packed fixture changed']);
   assert.ok(pm(['evidence', 'affected', '--changed', 'doc.md', '--json']).includes('packed-decision'));
   assert.ok(pm(['evidence', 'show', 'packed-decision', '--json']).includes('lastCheck'));
+  for (const [item, note] of [['packed-decision', 'Packed source annotation'], ['packed-recipient', 'Packed recipient annotation']]) {
+    const links = JSON.parse(pm(['files', item, '--list', '--json'])) as { files: { path: string; scope: string; note?: string }[] };
+    assert.deepEqual(links.files, [{ path: 'doc.md', scope: 'project', note }]);
+  }
   writeFileSync(join(consumer, 'embed.ts'), `import { check, affected, review, cite, replay, fileAdapter } from 'pm-evidence';\nconst result = await check(['packed-decision'], { workspace: process.env.PM_PATH, root: '.', record: false });\nif (result.rows[0].freshness !== 'changed' || [affected,review,cite,replay,fileAdapter.read].some(fn => typeof fn !== 'function')) throw Error('SDK failed');\nconsole.log('SDK accepted');\n`);
   assert.match(execute(consumer, manager === 'npm' ? process.execPath : 'bun', ['embed.ts'], hostEnv), /SDK accepted/);
   const globalRoot = join(root, 'global'); const globalBin = join(globalRoot, 'bin'); mkdirSync(globalRoot); mkdirSync(globalBin);
@@ -56,4 +60,11 @@ for (const manager of ['npm', 'bun']) test(`packed ${manager} and ${manager === 
   const globalArgs = ['bundle.json', '--item', 'packed-recipient', '--expected-revision', globalTarget.revision, '--authorize', '--json'];
   assert.match(execute(consumer, join(globalBin, 'pm'), ['evidence', 'bundle-inspect', ...globalArgs], globalEnv), /fragmentDigest/);
   assert.match(execute(consumer, join(globalBin, 'pm'), ['evidence', 'bundle-import', ...globalArgs], globalEnv), /unchanged/);
+  const globalPm = (args: string[]) => execute(consumer, join(globalBin, 'pm'), args, globalEnv);
+  globalPm(['create', 'Decision', '--id', 'packed-global-recipient', '--title', 'Global portable recipient', '--parent', 'none', '--file', 'path=doc.md,scope=project,note=Global recipient annotation']);
+  const authorization = JSON.parse(globalPm(['evidence', 'bundle-target', 'packed-global-recipient', '--json'])) as { revision: string };
+  assert.match(globalPm(['evidence', 'bundle-import', 'bundle.json', '--item', 'packed-global-recipient', '--expected-revision', authorization.revision, '--authorize', '--json']), /"added": 1/);
+  globalPm(['evidence', 'check', 'packed-decision', '--root', '.', '--json']);
+  assert.match(globalPm(['files', 'packed-global-recipient', '--list', '--json']), /Global recipient annotation/);
+  assert.match(globalPm(['files', 'packed-decision', '--list', '--json']), /Packed source annotation/);
 });

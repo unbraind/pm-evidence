@@ -6,6 +6,7 @@ import { bundleTarget, cite, exportBundle, setBundleConsent } from '../index.ts'
 import type { CitationBundle, BundleAuthorization } from '../index.ts';
 import { digest } from '../src/core.ts';
 import { tracker } from './helpers.ts';
+import type { PmClient } from '@unbrained/pm-cli/sdk';
 
 /** Genuine SDK fixtures include two selected fragments and one excluded source. */
 export async function bundleFixture(t: TestContext) {
@@ -31,4 +32,14 @@ export function rehash(bundle: CitationBundle): CitationBundle {
 /** Interpose a boundary on the real locked store while peer operations still use the complete SDK. */
 export function sameNative(before: Record<string, unknown>, after: Record<string, unknown>): void {
   for (const key of Object.keys(before)) if (!['evidence_state', 'comments', 'collection_counts', 'files', 'updated_at', 'updated_by'].includes(key)) assert.deepEqual(after[key], before[key], key);
+}
+/** Native annotations deliberately collide with every portable source kind and separate scope. */
+export function nativeFileInputs(note: string): string[] {
+  return ['path=original.md,scope=project,note=Original native link', `path=selected.md,scope=project,note=${JSON.stringify(note)}`, 'path=data.json,scope=project', 'path=variant.md,scope=global,note=Global variant link', 'path=selected.md,scope=global,note=Global selected link'];
+}
+/** Seed operator-owned annotations through supported SDK operations before evidence writes. */
+export async function seedNativeFiles(client: PmClient, item: string, note: string) {
+  await client.update(item, { clearFiles: true, unset: ['parent', 'assignee', 'sprint', 'release'] });
+  await client.update(item, { file: nativeFileInputs(note), unset: ['parent', 'assignee', 'sprint', 'release'] });
+  return (await client.get(item, { full: true })).item.files ?? [];
 }

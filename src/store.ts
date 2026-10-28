@@ -1,4 +1,4 @@
-import { certifyCompleteListResult, dedupeLinkedArtifacts, getHistoryPath, mutateItem, nowIso, parseAnnotationTextInput, PmClient, readHistoryEntries, readSettings, selectImportAuthor, verifyHistoryEntries } from '@unbrained/pm-cli/sdk';
+import { artifactKey, certifyCompleteListResult, dedupeLinkedArtifacts, getHistoryPath, mutateItem, nowIso, parseAnnotationTextInput, PmClient, readHistoryEntries, readSettings, selectImportAuthor, verifyHistoryEntries } from '@unbrained/pm-cli/sdk';
 import type { GetResult, ItemDocument, PmCompleteListResult } from '@unbrained/pm-cli/sdk';
 import type { SchemaFieldDefinition } from '@unbrained/pm-cli/sdk/authoring';
 import type { Citation, CheckRow, EvidenceOptions, EvidenceState } from './types.ts';
@@ -15,7 +15,8 @@ export interface EvidenceExchange<T> { result: T; value?: EvidenceState; observa
 
 /** One SDK-owned native metadata projection for both conditional and locked evidence writes. */
 function writeEvidence(document: ItemDocument, value: EvidenceState, observation: string, author: string): string[] {
-  const files = [...new Set(value.citations.filter(entry => ['file', 'json'].includes(entry.descriptor.provider)).map(entry => entry.descriptor.source))].map(source => ({ path: source, scope: 'project' as const, note: 'pm-evidence source identity relative to caller-selected root' }));
+  const owned = new Set((document.metadata.files ?? []).map(artifactKey));
+  const files = [...new Set(value.citations.filter(entry => ['file', 'json'].includes(entry.descriptor.provider)).map(entry => entry.descriptor.source))].map(source => ({ path: source, scope: 'project' as const, note: 'pm-evidence source identity relative to caller-selected root' })).filter(file => !owned.has(artifactKey(file)));
   Object.assign(document.metadata, { evidence_state: JSON.stringify(value), ...(files.length > 0 ? { files: dedupeLinkedArtifacts([...document.metadata.files ?? [], ...files]) } : {}), comments: [...document.metadata.comments ?? [], { text: parseAnnotationTextInput(observation), author, created_at: nowIso() }] });
   return ['evidence_state', 'comments', ...(files.length > 0 ? ['files'] : [])];
 }
