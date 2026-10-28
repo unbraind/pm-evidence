@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { dedupeLinkedArtifacts, parseAnnotationTextInput } from '@unbrained/pm-cli/sdk';
 import { bundleTarget, cite, exportBundle, importBundle, inspectBundle, replay, review, setBundleConsent, validateBundle } from '../index.ts';
 import type { Citation, CitationBundle } from '../index.ts';
 import { bundleFixture, authorization, sameNative } from './bundle-helpers.ts';
@@ -19,6 +20,7 @@ test('500 seeded transfer sequences model SDK read-back, older replays, CRLF, na
     await f.client.schemaAddStatus(custom, { role: [(['active', 'blocked'] as const)[next() % 2]] });
     await f.client.update(f.target, { title: 'Native title', description: '  Native\r\n description  ', body: 'Native\r\nbody\n', status: custom, parent, dep: [`id=${dependency},kind=depends_on`], tags: 'native,bundle-model', priority: 1, acceptanceCriteria: ' Native outcome ; Second ', note: ['Native note'], learning: ['Native learning'], file: ['path: original.md\nscope: project'], doc: ['path: native-doc.md\nscope: project'], test: ['command: node --version'], unset: ['assignee', 'sprint', 'release'] });
     let baseline = (await f.client.get(f.target, { full: true })).item;
+    const nativeFiles = baseline.files ?? []; const comments = (baseline.comments ?? []).map(entry => ({ text: entry.text, author: entry.author }));
     const model = new Map<string, { entry: CitationBundle['entries'][number]; consent: 'granted' | 'revoked'; reviews: string[] }>();
     const history: CitationBundle[] = [f.bundle]; const selected = [...f.citations]; const granted = new Set(selected);
     const sourceModel = new Map(f.citations.map((id, index) => [id, ['  Exact\tclaim\r\nSecond line  ', '9007199254740993', 'SECRET-UNSELECTED'][index]]));
@@ -47,7 +49,7 @@ test('500 seeded transfer sequences model SDK read-back, older replays, CRLF, na
           const expectedAdded = input.entries.filter(entry => !model.has(entry.origin?.citation ?? entry.id)).length;
           assert.equal(preview.added, expectedAdded); assert.equal(preview.existing, input.entries.length - expectedAdded);
           const applied = await importBundle(input, auth, f.options); assert.deepEqual(applied, { ...preview, preview: false });
-          if (expectedAdded > 0) { revision++; targetComments++; imported++; } else unchanged++;
+          if (expectedAdded > 0) { revision++; targetComments++; imported++; comments.push({ text: parseAnnotationTextInput('evidence bundle import'), author: 'fixture' }); } else unchanged++;
           for (const entry of input.entries) if (!model.has(entry.origin?.citation ?? entry.id)) model.set(entry.origin?.citation ?? entry.id, { entry, consent: 'revoked', reviews: [] });
         } else if (choice === 4) {
           await f.client.focus(next() % 2 === 0 ? parent : dependency);
@@ -68,19 +70,25 @@ test('500 seeded transfer sequences model SDK read-back, older replays, CRLF, na
           if (choice === 6) {
             const consent = expected.consent === 'granted' ? 'revoked' : 'granted';
             await setBundleConsent({ ...await bundleTarget(f.target, f.options), citations: [citation.id], consent }, f.options); expected.consent = consent;
+            comments.push({ text: parseAnnotationTextInput(`evidence sharing consent ${consent}`), author: 'fixture' });
             if (consent === 'granted') await produced(f.target, citation.id);
           } else {
-            const reason = `Review ${sequence}-${operation}`; await review(f.target, { ...f.options, citation: citation.id, disposition: 'still-valid', reason }); expected.reviews.push(reason);
+            const reason = `Review ${sequence}-${operation}`; const receipt = await review(f.target, { ...f.options, citation: citation.id, disposition: 'still-valid', reason }); expected.reviews.push(reason);
+            comments.push({ text: parseAnnotationTextInput(`evidence review ${receipt.observation} still-valid`), author: 'fixture' });
           }
           revision++; targetComments++;
         }
         const native = (await f.client.get(f.target, { full: true })).item; sameNative(baseline, native);
         const actual = native.evidence_state === undefined ? { revision: 0, citations: [] as Citation[] } : JSON.parse(String(native.evidence_state)) as { revision: number; citations: Citation[] };
         assert.equal(actual.revision, revision); assert.equal(actual.citations.length, model.size); assert.equal(native.comments?.length ?? 0, targetComments);
+        assert.deepEqual((native.comments ?? []).map(entry => ({ text: entry.text, author: entry.author })), comments);
+        assert.deepEqual(native.files ?? [], dedupeLinkedArtifacts([...nativeFiles, ...[...model.values()].map(({ entry }) => ({ path: entry.descriptor.source, scope: 'project' as const, note: 'pm-evidence source identity relative to caller-selected root' }))]));
         for (const citation of actual.citations) {
           const expected = model.get(citation.origin!.citation)!; assert.ok(expected);
           assert.deepEqual(citation.descriptor, expected.entry.descriptor); assert.equal(citation.retained, expected.entry.retained); assert.equal(citation.fragmentDigest, expected.entry.fragmentDigest);
-          assert.equal(citation.provenance.item, f.target); assert.equal(citation.origin!.item, f.item); assert.equal(citation.exportConsent, expected.consent); assert.deepEqual(citation.reviews.map(entry => entry.reason), expected.reviews);
+          assert.deepEqual(citation.provenance, { ...expected.entry.provenance, item: f.target }); assert.deepEqual(citation.origin, expected.entry.origin ?? { ...expected.entry.provenance, citation: expected.entry.id });
+          assert.equal(citation.exportConsent, expected.consent); assert.deepEqual(citation.reviews.map(entry => entry.reason), expected.reviews);
+          for (const observation of citation.reviews) { assert.equal(observation.author, 'fixture'); assert.equal(observation.disposition, 'still-valid'); assert.equal(new Date(observation.at).toISOString(), observation.at); }
           assert.equal(replay(citation), Buffer.from(expected.entry.retained, 'base64').toString('utf8'));
         }
         const files = new Set(native.files?.map(entry => entry.path)); assert.ok(files.has('original.md'));

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { rm, writeFile } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { BUNDLE_MAX_BYTES, bundleTarget, exportBundle, importBundle, inspectBundle, replay, setBundleConsent, validateBundle } from '../index.ts';
 import type { BundleAuthorization, BundleConsent, Citation, CitationBundle } from '../index.ts';
@@ -132,4 +132,18 @@ test('bad unselected records fail alone, foreign targets skip, and conflicting t
   assert.equal((await new Store(g.options).get(g.item)).value.citations.length, 2);
   const history = join(g.workspace, 'history', `${g.item}.jsonl`); await writeFile(history, 'invalid synthetic history');
   await assert.rejects(bundleTarget(g.item, g.options), { code: 'integrity' });
+});
+
+test('released retained citation fixture remains readable and exports after an explicit sharing grant', async t => {
+  const f = await tracker(t); const store = new Store(f.options);
+  const legacy = JSON.parse(await readFile(new URL('./fixtures/retained-citation-v2026.10.28.json', import.meta.url), 'utf8')) as { version: 1; revision: number; citations: Citation[] };
+  assert.equal(legacy.citations[0].exportConsent, undefined); assert.equal(legacy.citations[0].origin, undefined);
+  await store.register(); await store.commit(f.item, undefined, legacy, 'Import released producer compatibility fixture');
+  const native = (await f.client.get(f.item, { full: true })).item;
+  assert.deepEqual(JSON.parse(String(native.evidence_state)), legacy); assert.equal(replay(legacy.citations[0]), '  Released retained claim  \r');
+  const selection = { item: f.item, citations: [legacy.citations[0].id] };
+  await assert.rejects(exportBundle(selection, f.options), { code: 'boundary' });
+  await setBundleConsent({ ...selection, ...await bundleTarget(f.item, f.options), consent: 'granted' }, f.options);
+  const output = await exportBundle(selection, f.options); assert.deepEqual(output.entries[0].descriptor, legacy.citations[0].descriptor);
+  assert.equal(output.entries[0].retained, legacy.citations[0].retained);
 });

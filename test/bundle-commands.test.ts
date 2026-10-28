@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFile, writeFile, stat } from 'node:fs/promises';
+import { open, readFile, writeFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import type { CommandHandlerContext } from '@unbrained/pm-cli/sdk/authoring';
@@ -54,4 +54,28 @@ test('command boundary rejects malformed files, flags and extreme values without
   assert.deepEqual(await durable(f.workspace), before);
   await writeFile(file, JSON.stringify(f.bundle));
   const bytes = await readFile(file); assert.ok(bytes.length < BUNDLE_MAX_BYTES);
+});
+
+test('complete-input boundary refuses real short reads and file replacement during a descriptor read', async t => {
+  const f = await bundleFixture(t); const auth = await authorization(f); const path = join(f.root, 'race.json');
+  await writeFile(path, JSON.stringify(f.bundle) + '\n');
+  const ctx = { command: 'evidence bundle-import', pm_root: f.workspace, args: [path], options: { item: f.target, expectedRevision: auth.revision, authorize: true }, global: { author: 'fixture' } } as CommandHandlerContext;
+  const handle = await open(path); const prototype = Object.getPrototypeOf(handle) as { read: typeof handle.read }; const original = prototype.read; await handle.close();
+  const inputIdentity = await stat(path);
+  for (const mode of ['short', 'same-size-edit'] as const) {
+    let changed = false;
+    prototype.read = async function (this: typeof handle, ...args: Parameters<typeof handle.read>) {
+      const result = await original.apply(this, args);
+      const current = await this.stat();
+      if (!changed && current.dev === inputIdentity.dev && current.ino === inputIdentity.ino) {
+        changed = true;
+        if (mode === 'short') return { ...result, bytesRead: result.bytesRead - 1 };
+        await writeFile(path, 'x'.repeat(result.bytesRead));
+      }
+      return result;
+    } as typeof handle.read;
+    try { await assert.rejects(runCommand('bundle-import', ctx), { exitCode: 2 }, mode); assert.ok(changed); }
+    finally { Object.assign(prototype, { read: original }); await writeFile(path, JSON.stringify(f.bundle) + '\n'); }
+  }
+  assert.equal((await f.client.get(f.target, { full: true })).item.evidence_state, undefined);
 });

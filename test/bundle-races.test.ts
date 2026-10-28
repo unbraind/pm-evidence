@@ -74,3 +74,22 @@ test('a competing writer cannot enter the target lease during locked bundle read
   const current = await authorization(f); assert.equal((await importBundle(f.bundle, current, f.options)).status, 'unchanged');
   t.diagnostic('two writers on one no-git tracker; SDK lease excludes peer until the locked exchange releases');
 });
+
+test('sharing grant and export cover attribution and exchange boundaries with live native permission', async t => {
+  let tested = 0;
+  for (const boundary of ['author:before', 'author:after', 'exchange:before', 'exchange:after']) {
+    for (const operation of ['export', 'consent']) {
+      const f = await bundleFixture(t); const source = await bundleTarget(f.item, f.options);
+      const revoke = async () => { await setBundleConsent({ ...source, citations: [f.citations[0]], consent: 'revoked' }, { ...f.options, author: 'peer' }); };
+      const run = async () => {
+        const action = operation === 'export' ? exportBundle({ item: f.item, citations: [f.citations[0]] }, f.options) : setBundleConsent({ ...source, citations: [f.citations[0]], consent: 'granted' }, f.options);
+        // A peer change after the exchange linearizes after the already authorized result.
+        if (boundary === 'exchange:after') await action; else await assert.rejects(action, { code: operation === 'export' ? 'boundary' : 'conflict' });
+      };
+      if (boundary.startsWith('author')) await atBoundary(boundary, revoke, run);
+      else await exchangeBoundary(1, boundary === 'exchange:before' ? 'before' : 'after', revoke, run);
+      await assert.rejects(exportBundle({ item: f.item, citations: [f.citations[0]] }, f.options), { code: 'boundary' }); tested++;
+    }
+  }
+  t.diagnostic(`sharing interleavings=${tested}; source consent is re-read inside its lease; successful pre-revocation snapshots remain truthful`);
+});

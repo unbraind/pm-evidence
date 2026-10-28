@@ -14,7 +14,9 @@ async function readBundle(path: string): Promise<unknown> {
     try {
       const stat = await file.stat(); requireInput(stat.isFile() && stat.size <= BUNDLE_MAX_BYTES, 'Bundle input must be a regular file of at most 4 MiB');
       const bytes = Buffer.alloc(BUNDLE_MAX_BYTES + 1); const { bytesRead } = await file.read(bytes, 0, bytes.length, 0);
-      requireInput(bytesRead <= BUNDLE_MAX_BYTES, 'Bundle input exceeds 4 MiB');
+      requireInput(bytesRead === stat.size, 'Bundle read was incomplete or changed size');
+      const after = await file.stat();
+      requireInput(JSON.stringify([after.dev, after.ino, after.size, after.mtimeMs, after.ctimeMs]) === JSON.stringify([stat.dev, stat.ino, stat.size, stat.mtimeMs, stat.ctimeMs]), 'Bundle file changed during the read');
       const content = bytes.subarray(0, bytesRead); const decoded = new TextDecoder('utf-8', { fatal: true }).decode(content);
       return JSON.parse(decoded) as unknown;
     } finally { await file.close(); }
