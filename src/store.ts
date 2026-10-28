@@ -17,7 +17,7 @@ export interface EvidenceExchange<T> { result: T; value?: EvidenceState; observa
 function writeEvidence(document: ItemDocument, value: EvidenceState, observation: string, author: string): string[] {
   const owned = new Set((document.metadata.files ?? []).map(artifactKey));
   const files = [...new Set(value.citations.filter(entry => ['file', 'json'].includes(entry.descriptor.provider)).map(entry => entry.descriptor.source))].map(source => ({ path: source, scope: 'project' as const, note: 'pm-evidence source identity relative to caller-selected root' })).filter(file => !owned.has(artifactKey(file)));
-  Object.assign(document.metadata, { evidence_state: JSON.stringify(value), ...(files.length > 0 ? { files: dedupeLinkedArtifacts([...document.metadata.files ?? [], ...files]) } : {}), comments: [...document.metadata.comments ?? [], { text: parseAnnotationTextInput(observation), author, created_at: nowIso() }] });
+  Object.assign(document.metadata, { evidence_state: JSON.stringify(value), ...(files.length > 0 ? { files: [...document.metadata.files ?? [], ...dedupeLinkedArtifacts(files)] } : {}), comments: [...document.metadata.comments ?? [], { text: parseAnnotationTextInput(observation), author, created_at: nowIso() }] });
   return ['evidence_state', 'comments', ...(files.length > 0 ? ['files'] : [])];
 }
 /** Use a monotone native stream generation and verify the locked materialized document. */

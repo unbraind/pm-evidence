@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { artifactKey } from '@unbrained/pm-cli/sdk';
+import { artifactKey, mutateItem, readSettings } from '@unbrained/pm-cli/sdk';
 import { decodeToon } from '@unbrained/pm-cli/sdk/testing';
 import type { LinkedArtifact } from '@unbrained/pm-cli/sdk';
 import { bindCriterion, bundleTarget, check, cite, exportBundle, importBundle, inspectBundle, review, setBundleConsent } from '../index.ts';
@@ -57,6 +57,24 @@ test('competing native annotation edits survive each CAS write boundary on a non
       peer = (await f.client.get(f.item, { full: true })).item.files ?? [];
     }, async () => { await review(f.item, { ...f.options, citation: f.citations[0], disposition: 'still-valid', reason: 'Concurrent native annotation' }); });
     preserves(peer, (await f.client.get(f.item, { full: true })).item.files ?? []);
+  }
+});
+
+test('foreign duplicate native links remain byte-equivalent when new citation identities are added', async t => {
+  const f = await bundleFixture(t); const native: LinkedArtifact[] = [
+    { path: 'selected.md', scope: 'project', note: 'First native annotation' },
+    { path: 'selected.md', scope: 'project', note: 'Second native annotation' },
+  ];
+  for (const id of [f.item, f.target]) {
+    await mutateItem({ pmRoot: f.workspace, settings: await readSettings(f.workspace), id, op: 'update', author: 'fixture', mutate: document => { document.metadata.files = structuredClone(native); return { changedFields: ['files'] }; } });
+    assert.deepEqual((await f.client.get(id, { full: true })).item.files, native, 'The native SDK accepts this persisted legacy collection');
+  }
+  await check([f.item], { ...f.options, budget: 10000 });
+  await importBundle(f.bundle, await authorization(f), f.options);
+  for (const id of [f.item, f.target]) {
+    const actual = (await f.client.get(id, { full: true })).item.files ?? [];
+    assert.deepEqual(actual.slice(0, native.length), native, 'Existing native rows must never be normalized or discarded');
+    assert.ok(actual.some(file => file.path === 'data.json' && file.scope === 'project'));
   }
 });
 
