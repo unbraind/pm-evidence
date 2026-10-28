@@ -44,7 +44,7 @@ test('selected bundle validates, inspects, previews and replays through SDK nati
 test('tampered complete bundle and missing target authorization refuse before all durable writes', async t => {
   const f = await bundleFixture(t); const auth = await authorization(f); const before = await durable(f.workspace);
   const cases: unknown[] = [null, {}, { ...f.bundle, foreign: true }, { ...f.bundle, version: Infinity }, { ...f.bundle, entries: Array(2) }, { ...f.bundle, entries: [] }, { ...f.bundle, entries: Array(129).fill(f.bundle.entries[0]) }, { ...f.bundle, entries: [f.bundle.entries[0], f.bundle.entries[0]] }, { ...f.bundle, policy: { ...f.bundle.policy, omitted: [] } }];
-  for (const mutation of ['hash', 'descriptor', 'bytes', 'invalid-utf8', 'base64', 'digest', 'size']) {
+  for (const mutation of ['hash', 'descriptor', 'bytes', 'invalid-utf8', 'base64', 'digest', 'size', 'escaped-size']) {
     const copy = structuredClone(f.bundle);
     if (mutation === 'hash') copy.hash = '0'.repeat(64);
     if (mutation === 'descriptor') copy.entries[1].descriptor.source = 'different.json';
@@ -53,7 +53,8 @@ test('tampered complete bundle and missing target authorization refuse before al
     if (mutation === 'base64') copy.entries[0].retained += '\n';
     if (mutation === 'digest') copy.entries[0].fragmentDigest = 'f'.repeat(64);
     if (mutation === 'size') { const text = 'x'.repeat(BUNDLE_MAX_BYTES); copy.entries[0].retained = Buffer.from(text).toString('base64'); copy.entries[0].fragmentDigest = digest(text); }
-    cases.push(['bytes', 'invalid-utf8', 'base64', 'digest', 'size'].includes(mutation) ? rehash(copy) : copy);
+    if (mutation === 'escaped-size') copy.entries[0].descriptor.anchor!.quote = '\u0000'.repeat(750_000);
+    cases.push(['bytes', 'invalid-utf8', 'base64', 'digest', 'size', 'escaped-size'].includes(mutation) ? rehash(copy) : copy);
   }
   for (const input of cases) {
     assert.throws(() => validateBundle(input));

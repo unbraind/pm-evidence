@@ -13,6 +13,7 @@ try {
   const commandsFile = join(root, 'src', 'bundle-commands.ts'); const commands = await readFile(commandsFile, 'utf8');
   const cases = [
     { name: 'complete checksum', pattern: '^tampered complete bundle', changed: original.replace(/  if \(digest\(JSON.stringify\(payload\)\) !== hash\)[^\n]+\n/, '') },
+    { name: 'aggregate transport bound', pattern: '^tampered complete bundle', changed: original.replace(/function encoding\(value: unknown\): string \{[\s\S]*?\n}/, 'function encoding(value: unknown): string { return JSON.stringify(value); }') },
     { name: 'explicit selection', pattern: '^selected bundle validates', changed: original.replace('!request.citations.includes(identity.data)', 'false').replace('selected.size !== request.citations.length', 'selected.size < request.citations.length').replace('entries: request.citations.map(id => selected.get(id))', 'entries: [...selected.values()]') },
     { name: 'target generation fence', pattern: '^consent revocation blocks', changed: original.replace('if (expected !== actual)', 'if (false)') },
     { name: 'live sharing permission', pattern: '^consent revocation blocks', changed: original.replace("if (citation.exportConsent !== 'granted')", 'if (false)') },

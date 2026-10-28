@@ -43,11 +43,24 @@ function parse<T extends z.ZodType>(schema: T, input: unknown): z.infer<T> {
   if (!result.success) throw new EvidenceError('invalid', 'Invalid bundle input', 'Use the documented bundle schema, dense selection and explicit current target authorization');
   return result.data;
 }
+/** Bound aggregate data before JSON allocation, then enforce the exact escaped transport size. */
+function encoding(value: unknown): string {
+  let bytes = 0;
+  const encoded = JSON.stringify(value, (_key, operand: unknown) => {
+    if (typeof operand === 'string') {
+      bytes += Buffer.byteLength(operand);
+      if (bytes > BUNDLE_MAX_BYTES) throw new EvidenceError('size', 'Bundle exceeds 4 MiB', 'Select fewer or smaller retained fragments');
+    }
+    return operand;
+  });
+  if (Buffer.byteLength(encoded) > BUNDLE_MAX_BYTES) throw new EvidenceError('size', 'Escaped bundle exceeds 4 MiB', 'Select fewer or smaller retained fragments');
+  return encoded;
+}
 /** Validate all selected bytes before returning any fragment, metadata or mutation plan. */
 export function validateBundle(input: unknown): CitationBundle {
   const value = parse(bundleSchema, input);
   const { hash, ...payload } = value;
-  if (Buffer.byteLength(JSON.stringify(value)) > BUNDLE_MAX_BYTES) throw new EvidenceError('size', 'Bundle exceeds 4 MiB', 'Select fewer or smaller retained fragments');
+  encoding(value);
   if (digest(JSON.stringify(payload)) !== hash) throw new EvidenceError('integrity', 'Bundle hash does not match', 'Obtain a complete unmodified bundle from an authorized source');
   for (const entry of value.entries) {
     const decoded = Buffer.from(entry.retained, 'base64');
@@ -96,7 +109,7 @@ export async function exportBundle(input: BundleSelection, options: EvidenceOpti
     }
     if (selected.size !== request.citations.length) throw new EvidenceError('missing', 'Selected citation is unavailable', 'Choose existing retained citations from evidence show');
     const payload = parse(payloadSchema, { kind: 'pm-evidence/retained', version: 1, policy: BUNDLE_POLICY, entries: request.citations.map(id => selected.get(id)) });
-    return { result: validateBundle({ ...payload, hash: digest(JSON.stringify(payload)) }) };
+    return { result: validateBundle({ ...payload, hash: digest(encoding(payload)) }) };
   });
 }
 /** Keep origin identity while rebinding ownership to the explicitly authorized existing native item. */
