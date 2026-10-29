@@ -30,6 +30,15 @@ The package exports its SDK through `main` and `types` and registers commands
 with pm. It has no standalone `bin`: use `npx pm` or `bunx --bun pm` through
 the installed host. npm/Bun dependency installation alone does not activate it.
 
+`resolveFragmentText(sourceText, citation.descriptor)` resolves current fragment
+text through the same exact resolver as `check`, without I/O, tracker writes or
+retained historical bytes. Supply an authorized immutable snapshot and a
+producer-valid descriptor. The shared strict schema bounds source text to
+16,777,216 UTF-16 code units. JSON pointers return raw source spans, preserving
+large integers, exponent spelling, escapes, whitespace and own `__proto__` keys.
+It throws `EvidenceError` with a remedy for invalid or unresolved requests.
+This pure SDK operation works without Git. Retained originals still use `replay`.
+
 ## Install
 
 Requires Node 22.18+ and pm 2026.10.23+. Built-in file/JSON reads require Linux with accessible procfs descriptor links and fail closed on unsupported platforms; no weaker path-only mode is enabled. From this checkout:

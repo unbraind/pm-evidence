@@ -1,10 +1,16 @@
 import { digest, EvidenceError, requireInput } from './core.ts';
-import { parseSelector, ancestrySchema, anchorSchema } from './citation-schema.ts';
+import { parseSelector, ancestrySchema, anchorSchema, fragmentRequestSchema } from './citation-schema.ts';
 import { jsonFragment } from './json-spans.ts';
 import type { Anchor, Descriptor, Selector } from './types.ts';
 
 /** A selected byte-preserving substring and its offsets within the UTF-8 decoded text. */
 export interface Fragment { text: string; start: number; end: number }
+/** Resolve exact current bytes with the production selector, independently of retained historical replay; performs no I/O or writes. */
+export function resolveFragmentText(text: string, descriptor: Descriptor): string {
+  const parsed = fragmentRequestSchema.safeParse({ text, descriptor });
+  if (!parsed.success) throw new EvidenceError('invalid', 'Invalid fragment request', 'Supply a bounded source string and a producer-valid citation descriptor');
+  return resolveFragment(parsed.data.text, parsed.data.descriptor).text;
+}
 /** Report every exact occurrence, including overlaps; never accept a fuzzy match. */
 export function hits(text: string, quote: string): number[] {
   if (quote.length === 0) return [];

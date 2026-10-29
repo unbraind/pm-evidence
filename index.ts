@@ -2,6 +2,8 @@ import { defineExtension } from '@unbrained/pm-cli/sdk/authoring';
 import { register } from './src/commands.ts';
 /** Cite, revalidate, traverse affected context and record explicit evidence reviews. */
 export { cite, check, affected, review, show, replay } from './src/evidence.ts';
+/** Pure current-source fragment text through the same exact resolver used by checks; no retention or tracker access required. */
+export { resolveFragmentText } from './src/selectors.ts';
 /** Portable retained artifacts, explicit consent and revision-bound single-target transfers. */
 export { bundleSchema, bundleAuthorizationSchema, bundleImportReceiptSchema, BUNDLE_MAX_BYTES, BUNDLE_POLICY, bundleTarget, setBundleConsent, exportBundle, validateBundle, inspectBundle, importBundle } from './src/bundles.ts';
 export type { CitationBundle, BundleSelection, BundleAuthorization, BundleConsent, BundleImportReceipt } from './src/bundles.ts';

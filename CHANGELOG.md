@@ -6,6 +6,10 @@
 
 - Transfer selected retained citations as validated portable bundles ([pm-evidence-portable-bundles](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-portable-bundles.toon))
 
+### Other
+
+- Resolve live fragment text through the public SDK ([pm-evidence-fragment-text-sdk](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/tasks/pm-evidence-fragment-text-sdk.toon))
+
 ## 2026.10.28 - 2026-10-28
 
 ### Added
