@@ -6,6 +6,7 @@ import { bindCriterion, criterionFacts } from './criteria.ts';
 import { EvidenceError, requireInput } from './core.ts';
 import { FIELDS } from './store.ts';
 import type { Disposition, Selector } from './types.ts';
+import { runBundleCommand } from './bundle-commands.ts';
 
 /** Validate one text flag without coercing missing or multiple operands. */
 function text(value: unknown): string { requireInput(typeof value === 'string', 'Required text operand is missing'); return value; }
@@ -20,6 +21,7 @@ export function selector(options: Record<string, unknown>): Selector {
 /** Dispatch through the same public API and let the host render TOON or JSON. */
 export async function runCommand(command: string, ctx: CommandHandlerContext): Promise<unknown> {
   try {
+    if (command.startsWith('bundle-')) return await runBundleCommand(command, ctx);
     const options = ctx.options; const base = { workspace: ctx.pm_root, author: ctx.global.author, client: ctx.sdk?.client, root: options.root === undefined ? '.' : text(options.root) };
     const bounded = { ...base, budget: options.budget === undefined ? undefined : Number(options.budget), diff: options.diff === true, maxBytes: options.maxBytes === undefined ? undefined : Number(options.maxBytes), timeoutMs: options.timeoutMs === undefined ? undefined : Number(options.timeoutMs) };
     if (command === 'bind') return await bindCriterion({ item: text(ctx.args[0]), citation: text(options.citation), criterion: { text: text(options.criterion), revision: text(options.criterionRevision) } }, base);
@@ -53,9 +55,14 @@ export function register(api: ExtensionApi): void {
     ['show', ['item'], [], [], 'Show citations and their last checks', 'pm evidence show decision-id'],
     ['bind', ['item'], ['citation', 'criterion', 'criterion-revision'], [], 'Bind a citation to an exact current criterion revision', 'pm evidence bind decision-id --citation ev-id --criterion "Expected outcome" --criterion-revision sha256'],
     ['criteria', ['items'], ['root', 'budget', 'max-bytes', 'timeout-ms'], [], 'Read criterion revision and source support facts without asserting truth', 'pm evidence criteria decision-id --root . --budget 800'],
+    ['bundle-target', ['item'], [], [], 'Read the native revision for explicit bundle authorization', 'pm evidence bundle-target decision-id'],
+    ['bundle-consent', ['item'], ['citation', 'expected-revision', 'consent'], [], 'Grant or revoke sharing permission for selected retained citations', 'pm evidence bundle-consent decision-id --citation ev-id --expected-revision sha256 --consent granted'],
+    ['bundle-export', ['item'], ['citation', 'out'], [], 'Export only explicitly selected retained citations to a new JSON file', 'pm evidence bundle-export decision-id --citation ev-id --out selected.json'],
+    ['bundle-import', ['bundle'], ['item', 'expected-revision'], ['authorize', 'preview'], 'Validate and atomically import artifacts into an authorized current item', 'pm evidence bundle-import selected.json --item decision-id --expected-revision sha256 --authorize'],
+    ['bundle-inspect', ['bundle'], ['item', 'expected-revision', 'budget'], ['authorize'], 'Validate the whole bundle and inspect compact metadata for an authorized target', 'pm evidence bundle-inspect selected.json --item decision-id --expected-revision sha256 --authorize'],
   ] as const;
   for (const [name, args, strings, booleans, description, example] of definitions) {
-    const flags: FlagDefinition[] = [...strings.map(flag => ({ long: `--${flag}`, description: `${flag} (example: ${example})`, value_type: 'string' as const, value_name: flag, repeatable: flag === 'changed' })), ...booleans.map(flag => ({ long: `--${flag}`, description: `${flag} (example: ${example} --${flag})`, value_type: 'boolean' as const }))];
+    const flags: FlagDefinition[] = [...strings.map(flag => ({ long: `--${flag}`, description: `${flag} (example: ${example})`, value_type: 'string' as const, value_name: flag, repeatable: flag === 'changed' || (flag === 'citation' && ['bundle-consent', 'bundle-export'].includes(name)) })), ...booleans.map(flag => ({ long: `--${flag}`, description: `${flag} (example: ${example} --${flag})`, value_type: 'boolean' as const }))];
     api.registerCommand(defineCommand({ name: `evidence ${name}`, description, intent: 'Project management = context management: evidence freshness for agents', arguments: args.map(arg => ({ name: arg, description: `${arg} (example: ${example})`, required: !['check', 'criteria'].includes(name), variadic: ['check', 'criteria'].includes(name) })), flags, examples: [example], run: ctx => runCommand(name, ctx) }));
   }
 }

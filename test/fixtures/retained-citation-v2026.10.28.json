@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "revision": 1,
+  "citations": [
+    {
+      "id": "ev-eb98402d2dd94444b25226f2",
+      "descriptor": {
+        "provider": "file",
+        "source": "legacy.md",
+        "revision": "d3d36f8f6fb606812ea018167347298790513ef9ffa599927eb570dc21672cd5",
+        "selector": {
+          "kind": "lines",
+          "start": 2,
+          "end": 2
+        },
+        "anchor": {
+          "quote": "  Released retained claim  \r",
+          "before": "Before\r\n",
+          "after": "\nAfter"
+        }
+      },
+      "fragmentDigest": "c98dd6425da90a0b98cd7913f9b4b4942be1a456f3586064cace48d7e6e203f0",
+      "retained": "ICBSZWxlYXNlZCByZXRhaW5lZCBjbGFpbSAgDQ==",
+      "provenance": {
+        "item": "evidence-test-decision",
+        "author": "legacy-fixture",
+        "at": "2026-10-28T20:45:46.651Z"
+      },
+      "reviews": []
+    }
+  ]
+}

@@ -207,9 +207,36 @@ A copied public pm-changelog tracker at `600d9ffb564205d37262dd450c8a32b89001791
 
 There were 20 cite calls, 3 check calls, 1 affected call, 1 corpus discovery and 100 source reads across the entire evaluation, including the baseline and bounded rerun. Affected returned five review candidates and declared incomplete source evidence. A duplicated exact anchor and a paragraph moved without its saved context were ambiguous; neither was silently rebound. The temporary copy was deleted. See [the proof details](docs/real-data.md) and `node test/real-data.acceptance.ts <public-checkout>` to reproduce against that checkout's origin/main.
 
+## Portable retained citation bundles
+
+Transfer an explicit selection of retained fragments to an existing item in another tracker. Bundles carry exact UTF-8 bytes in canonical base64, SHA-256 fragment and source hashes, selectors, anchors and original citation provenance. Sharing requires a separate explicit consent grant; `--retain` alone grants local storage permission. Existing citations remain readable, and require a grant before their first export.
+
+```sh
+pm evidence bundle-target source-item --json
+# Use the returned revision after obtaining permission to share these citations.
+pm evidence bundle-consent source-item --citation ev-id --expected-revision sha256 --consent granted
+pm evidence bundle-export source-item --citation ev-id --out selected.json --json
+
+# In the recipient tracker, authorize an existing target at its current native revision.
+pm evidence bundle-target recipient-item --json
+pm evidence bundle-inspect selected.json --item recipient-item --expected-revision sha256 --authorize --budget 800
+pm evidence bundle-import selected.json --item recipient-item --expected-revision sha256 --authorize --preview
+pm evidence bundle-import selected.json --item recipient-item --expected-revision sha256 --authorize
+```
+
+Repeat `--citation` to select up to 128 artifacts. Export creates a new mode-0600 JSON file exclusively and returns a compact receipt in host TOON or JSON; it refuses to overwrite an existing file. Complete bundles are capped at 4 MiB of compact JSON. The hashed policy explicitly omits unselected citations, whole source files, native fields and relationships, reviews, criterion bindings and last checks. Descriptors include the selected passage's anchor/context; inspect the intended sharing scope before granting consent. Source identities remain relative to the original caller-selected source root.
+
+The whole bundle validates before inspection output or import writes. `bundle-inspect` returns metadata and bounded omission receipts; it never prints retained source text. Preview and apply use the same planner. Each import updates one existing item atomically, preserving its native fields and relationships and adding source links through SDK deduplication. Invalid incoming entries refuse the complete bundle. A foreign or malformed target evidence field returns `skipped` with a remedy, preserving it. An unrelated malformed source citation does not prevent exporting a valid selected sibling.
+
+The target revision fingerprints verified native history, including edit/restore cycles. After any native edit or successful import, read `bundle-target` again before authorizing a retry; stale authorization refuses even when the desired bytes are already present. With fresh authorization, replaying an older bundle adds only absent artifacts and preserves native reviews, consent and bindings. Conflicting retained bytes or original identity refuse before writes. Imports preserve original provenance in `origin`, bind ownership to the recipient and start with onward sharing revoked. There is no content-only idempotency journal or frozen recovery plan.
+
+Revoke future sharing with `bundle-consent ... --consent revoked` using a fresh revision. Exports check live consent under the same native lease as the snapshot read. Revocation prevents later exports; it cannot recall copies already shared. Bundle hashes establish integrity, not sender authenticity. Target authorization is the caller's explicit decision, not an access-control bypass; native SDK permissions still apply.
+
+SDK consumers can use `bundleTarget`, `setBundleConsent`, `exportBundle`, `validateBundle`, `inspectBundle` and `importBundle`, with runtime-derived `CitationBundle`, `BundleConsent`, `BundleAuthorization` and `BundleImportReceipt` types. Read an imported citation through the native SDK and call `replay(citation)` to recover the exact fragment without original source files. No source lookup occurs during replay. See the [SDK example](examples/bundles.ts) and [public-tracker measurements](docs/portable-bundles.md).
+
 ## Without git
 
-Cite, check, affected, review, show, retained replay and all SDK APIs work in ordinary initialized trackers without git. No evidence command invokes git. The development identity audit and the optional public-data and function-revert evaluation harnesses require git; neither is part of evidence command execution.
+Cite, check, affected, review, show, retained replay, bundle consent/export/inspect/import and all SDK APIs work in ordinary initialized trackers without git. No evidence command invokes git. The development identity audit and the optional public-data and function-revert evaluation harnesses require git; neither is part of evidence command execution.
 
 ## Exit codes and development
 

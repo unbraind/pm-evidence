@@ -51,8 +51,10 @@ export const criterionRefSchema = z.strictObject({ text: z.string().min(1).max(6
 export type CriterionRef = z.infer<typeof criterionRefSchema>;
 /** A citation may support several exact revisions; duplicates carry no extra evidence. */
 const criterionRefs = boundedArray(criterionRefSchema, 64).refine(values => new Set(values.map(value => JSON.stringify(value))).size === values.length);
+/** Original identity survives transport; importing never grants onward sharing consent. */
+export const citationOriginSchema = z.strictObject({ item: sourceText.min(1), citation: z.string().regex(/^ev-[a-f0-9]{24}$/), author: sourceText.min(1), at: z.iso.datetime() });
 /** The sole citation shape; inferred types and every producer/consumer derive from this schema. */
-export const citationSchema = z.strictObject({ id: z.string().regex(/^ev-[a-f0-9]{24}$/), descriptor: descriptorSchema, fragmentDigest: z.string().regex(/^[a-f0-9]{64}$/), retained: z.string().max(22_369_624).optional(), provenance: z.strictObject({ item: sourceText.min(1), author: sourceText.min(1), at: z.iso.datetime() }), reviews: boundedArray(observationSchema, 10_000), criteria: criterionRefs.optional(), lastCheck: checkRowSchema.optional(), lastCheckedAt: z.iso.datetime().optional() });
+export const citationSchema = z.strictObject({ id: z.string().regex(/^ev-[a-f0-9]{24}$/), descriptor: descriptorSchema, fragmentDigest: z.string().regex(/^[a-f0-9]{64}$/), retained: z.string().max(22_369_624).optional(), provenance: z.strictObject({ item: sourceText.min(1), author: sourceText.min(1), at: z.iso.datetime() }), reviews: boundedArray(observationSchema, 10_000), criteria: criterionRefs.optional(), lastCheck: checkRowSchema.optional(), lastCheckedAt: z.iso.datetime().optional(), exportConsent: z.enum(['granted', 'revoked']).optional(), origin: citationOriginSchema.optional() });
 /** Citation lists produced by ordinary mutations are dense and have unique logical identities. */
 export const citationListSchema = boundedArray(citationSchema, 10_000).refine(values => new Set(values.map(value => value.id)).size === values.length);
 /** Envelope validation is deliberately independent of individual citation validity. */

@@ -21,7 +21,8 @@
     "CHANGELOG.md",
     "ARCHITECTURE.md",
     "docs/real-data.md",
-    "docs/record-validation.md"
+    "docs/record-validation.md",
+    "docs/portable-bundles.md"
   ],
   "scripts": {
     "build": "tsc",

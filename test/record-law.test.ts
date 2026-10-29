@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { test } from 'node:test';
-import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { check, cite, review, show, validateRecord, RecordValidationError } from '../index.ts';
@@ -12,20 +11,8 @@ import type { Shape } from './record-boundaries.ts';
 import { envelopeSchema, stateSchema } from '../src/citation-schema.ts';
 import { Store } from '../src/store.ts';
 import { citedTracker, tracker } from './helpers.ts';
+import { durable } from './tracker-image.ts';
 
-/** Exact authoritative tracker image; SDK read-usage receipts and metadata caches are runtime state. */
-async function durable(workspace: string): Promise<Record<string, string>> {
-  const result: Record<string, string> = {};
-  /** Enumerate only this disposable tracker, including metadata, history and SDK state. */
-  async function visit(relative: string): Promise<void> {
-    for (const entry of await readdir(join(workspace, relative), { withFileTypes: true })) {
-      const name = join(relative, entry.name);
-      if (name === 'runtime') continue;
-      if (entry.isDirectory()) await visit(name); else result[name] = createHash('sha256').update(await readFile(join(workspace, name))).digest('hex');
-    }
-  }
-  await visit(''); return result;
-}
 test('record law: 10000 reviews refuse the 10001st before writing', async t => {
   const f = await citedTracker(t); const store = new Store(f.options); const prior = await store.get(f.item); const value = full(prior.value.citations[0]);
   value.citations[0].reviews = Array.from({ length: 10000 }, (_, i) => ({ ...value.citations[0].reviews[0], id: `review-${i}` }));

@@ -147,5 +147,5 @@ export async function review(item: string, options: ReviewOptions) {
 /** Return citation metadata and last checks; anchors and retained bytes stay out of routine output. */
 export async function show(item: string, options: EvidenceOptions) {
   const current = await new Store(options).get(item);
-  return { item: current.item.id, revision: current.value.revision, citations: current.value.citations.map(entry => ({ id: entry.id, provider: entry.descriptor.provider, source: entry.descriptor.source, sourceRevision: entry.descriptor.revision, selector: entry.descriptor.selector, fragmentDigest: entry.fragmentDigest, retained: entry.retained !== undefined, provenance: entry.provenance, reviews: entry.reviews, lastCheck: entry.lastCheck, lastCheckedAt: entry.lastCheckedAt })) };
+  return { item: current.item.id, revision: current.value.revision, citations: current.value.citations.map(entry => ({ id: entry.id, provider: entry.descriptor.provider, source: entry.descriptor.source, sourceRevision: entry.descriptor.revision, selector: entry.descriptor.selector, fragmentDigest: entry.fragmentDigest, retained: entry.retained !== undefined, provenance: entry.provenance, exportConsent: entry.exportConsent, origin: entry.origin, reviews: entry.reviews, lastCheck: entry.lastCheck, lastCheckedAt: entry.lastCheckedAt })) };
 }
