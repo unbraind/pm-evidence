@@ -4,17 +4,16 @@ description: "pm-web PR 278 cannot render live fragments independently of histor
 type: Task
 status: in_progress
 priority: 2
-tags: []
+tags[1]: "gh:unbraind/pm-evidence#19"
 created_at: "2026-10-29T08:33:42.578Z"
-updated_at: "2026-10-29T08:49:13.310Z"
-assignee: codex-agent
-claim_principal: codex-agent
+updated_at: "2026-10-29T08:59:05.431Z"
 author: codex-agent
 acceptance_criteria: "Root SDK export resolves unchanged and changed file, heading and raw JSON spans independently of retained originals; large integer, exponent, escaped string and own prototype-key spellings remain exact; invalid inputs return typed safe remedies; 500 seeded sequences re-read native SDK state unchanged; npm and Bun packed consumers import the public export."
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-29T08:33:59.877Z",codex-agent,"Adds resolveFragmentText(text, descriptor) as a pure public entry to the existing production resolveFragment implementation, with one strict request schema composed from producer text/descriptor schemas. No selector, JSON parser, source reader or native writer is duplicated. Focused source/SDK tests passed 9/9, including 500 seeded sequences, 2036 random source operations, six producer descriptors, older replays, whitespace/CRLF, exact raw JSON spellings, and native SDK read-back after every sequence in a Gitless tracker. Linked consumer work is pm-web-5sx6 / pm-web-cnhi and PR https://github.com/unbraind/pm-web/pull/278."
   "2026-10-29T08:45:21.506Z",codex-agent,"The linked focused suite passed 9/9 via pm test --run --progress (500 sequences, 2036 operations, six selectors, native SDK read-back preserved). Typechecks, lint, zero duplication (80 sources) and docstrings (27 files / 127 declarations) pass. Mutation proof in a disposable copy: changing only resolveFragmentText to JSON parse/stringify normalization fails the 1e309 exact-exponent assertion (null instead of the raw span); the source checkout was untouched and the fixed boundary test passed again. Packed npm/npx and Bun/bunx/global acceptance now imports the public root export and asserts exact large-integer, exponent, escaped-string and prototype-key spans; its genuine packed journey is running. No new mutation/import/export/sync path was added."
   "2026-10-29T08:49:13.296Z",codex-agent,"Distribution decision: the web consumer must pin this SDK commit without a release or publish. Compiled JavaScript and declaration files are included explicitly in the commit so npm/Bun consumers that disable lifecycle scripts still receive the public entrypoint. These are deterministic text distribution files, not binary/cache artifacts. Existing build scripts and runtime dependency versions are unchanged. Full npm/Bun CI remains required; packed tests cover the root export in real installed consumers."
+  "2026-10-29T08:58:52.714Z",codex-agent,"Genuine packed acceptance passed 2/2: npm/npx and native Bun/bunx, including global installs, existing portable bundle journeys and the new root-export exact-span probes. The API source and producer contracts are unchanged after those tests. Compiled JS, declaration and source-map text is now staged for commit-pinned consumers; no binary/cache files are included. PR https://github.com/unbraind/pm-evidence/pull/19 is draft pending full npm/Bun CI. Claim released for independent verification; do not close this item."
 files[5]{path,scope}:
   index.ts,project
   src/citation-schema.ts,project
