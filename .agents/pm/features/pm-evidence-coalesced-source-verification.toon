@@ -2,13 +2,19 @@ id: pm-evidence-coalesced-source-verification
 title: Verify shared citation sources once per check
 description: "Coalesce source reads within an evidence check, preserving immutable provider-authorized snapshots and exposing counts without a persistent cache or new source authority."
 type: Feature
-status: in_progress
+status: closed
 priority: 2
 tags[2]: backlog-1021,coalesced-source
 created_at: "2026-10-25T22:24:41.473Z"
-updated_at: "2026-10-26T10:47:18.085Z"
+updated_at: "2026-10-30T18:04:27.013Z"
+closed_at: "2026-10-30T18:04:24.799Z"
+completed_at: "2026-10-26T12:56:37.000Z"
 author: codex-agent
 acceptance_criteria: "Fifty citations into one unchanged document require one source read; A document changing during read never produces mixed revisions; Cancellation produces an explicit incomplete receipt; Typed SDK and compact TOON/JSON CLI, strict boundary validation, no-git real-data proof, npm and Bun CI release gates"
+release: 2026.10.28
+resolution: "Delivered by PR #6 (ab292fd): Keep evidence readable while verifying each shared source once"
+expected_result: "Fifty citations into one unchanged document require one source read; A document changing during read never produces mixed revisions; Cancellation produces an explicit incomplete receipt; Typed SDK and compact TOON/JSON CLI, strict boundary validation, no-git real-data proof, npm and Bun CI release gates"
+actual_result: "PR #6 merged at 2026-10-26T12:56:37Z as ab292fd; required CI passed on the merged head."
 comments[21]{created_at,author,text}:
   "2026-10-25T22:24:46.064Z",codex-agent,"Overlap recheck: src/evidence.ts check and affected currently call checkCitation per citation; src/sources.ts provides coherent bounded snapshots but no per-check reuse. The pinned core item-metadata-cache stores native item metadata, not caller source bytes. Sibling pm-context file-focus and pm-brief consume tracker items and linked-file focus, without source-fragment snapshot authority. Existing SDK-adoption work owns output accounting and is reused. No duplicate coalescing item exists. Implement invocation-local provider/source snapshot promises (including refusals), preserve root/adapter authority, expose source reads and cancellation in budgeted receipts, and keep observations behind fresh SDK CAS checks. No import/export/sync, durable cache, status classification or journal is introduced."
   "2026-10-25T22:37:50.232Z",codex-agent,"Implemented invocation-local provider/source snapshot sharing in check and affected, immutable adapter copies, prompt cancellation with incomplete receipts, strict option bounds, guarded source-read counts, and revision-fenced recording. First targeted source/command/regression run: 28 passed. Eight package lifecycle interleavings preserved peer reviews on real non-git trackers; cancellation and foreign-state recording controls are being finalized. Public pm-changelog snapshot fa8a8a1d0af97797e6a34a78bdd6b9b30242378e: 197 items, 50 citations across 5 items into one 27794-byte document, exactly 1 source read, all 50 current. Bounded 800-token SDK check: 751 estimated tokens, 5 returned, 45 omitted; native CLI TOON 1800 bytes/450 estimated tokens and JSON 3002 bytes/751 estimated tokens. All 405 copied public files unchanged after read-only checks; no git executable available. No hosted or original tracker data was modified."
@@ -139,4 +145,5 @@ docs[5]:
   - path: README.md
     scope: project
     note: Coalesced verification contract
+close_reason: "Delivered by PR #6 (ab292fd): Keep evidence readable while verifying each shared source once"
 body: ""
