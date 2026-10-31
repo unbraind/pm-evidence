@@ -31,7 +31,7 @@ function commit(root: string, env: NodeJS.ProcessEnv): void {
 function refusal(root: string, suite: string, count: number, evidence: RegExp, env: NodeJS.ProcessEnv): void {
   const result = spawnSync(process.execPath, ['--test', '--test-concurrency=1', '--test-reporter=tap', suite], { cwd: root, env, encoding: 'utf8', timeout: 600000 });
   assert.equal(result.error, undefined); assert.equal(result.status, 1, result.stdout + result.stderr);
-  assert.match(result.stdout, new RegExp(`# fail ${count}\\b`)); assert.match(result.stdout, evidence);
+  assert.match(result.stdout, new RegExp(`# fail ${count}\\b`)); assert.equal([...result.stdout.matchAll(new RegExp(evidence.source, 'g'))].length, count, result.stdout);
   assert.doesNotMatch(result.stdout, /EAI_AGAIN|ETIMEDOUT|ECONNRESET/);
 }
 
