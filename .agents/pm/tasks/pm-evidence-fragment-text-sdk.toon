@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[1]: "gh:unbraind/pm-evidence#19"
 created_at: "2026-10-29T08:33:42.578Z"
-updated_at: "2026-10-31T00:04:09.648Z"
+updated_at: "2026-10-31T00:06:16.000Z"
 assignee: codex-agent
 claim_principal: codex-agent
 author: codex-agent
@@ -19,7 +19,7 @@ comments[7]{created_at,author,text}:
   "2026-10-31T00:00:37.060Z",codex-agent,"Review round: fetched the complete PR review-thread connection (zero threads, no pagination); reviews API is empty. Latest CodeRabbit comment skips automatic review and contains no Outside diff range findings. Merged origin/main before changes. Issue #20 is valid: all compiled entrypoints are absent from Git while dist is ignored. General rule: every documented scripts-disabled install must contain the full runtime/declaration graph at the exact immutable dependency revision. Audit the entire dist inventory, packed and commit-pinned npm/Bun journeys, root SDK exports and host CLI commands in non-git trackers; preserve source exactness and unchanged thresholds."
   "2026-10-31T00:01:13.075Z",codex-agent,"Correction after exact tree inspection: issue #20 names 00d770c; the fetched PR head dddf9e0 already tracks 56 dist entries (added in the prior round), despite the remaining ignore rule. The valid unresolved class is missing immutable git-consumer proof and source/artifact drift enforcement. The merge advances source VERSION from 2026.10.28 to 2026.10.30 without rebuilding those artifacts. Add a gate comparing every committed runtime/declaration/map file against a pristine compiler output before builds can mask drift, plus real scripts-disabled tarball/git installs. Local pm health currently reports only extension_host_pm_cli_version_skew for the ignored pm-github install; history integrity is clean and no merge receipt reconciliation was requested."
   "2026-10-31T00:03:28.894Z",codex-agent,"Focused red proof before rebuild: node --test --test-concurrency=1 test/distribution.acceptance.ts returned 1/2 pass, 1/2 fail. HEAD dist/index.js differs from pristine source build (compiled extension version 2026.10.28 vs source 2026.10.30). The independent graph oracle passed with 168 missing/stale/extra mutations refused across all 56 emitted paths. Release ordering now runs dist:check before any build can hide this condition; remove the dist ignore rule to expose future generated files. Added exact HEAD local Git mirror installs to every existing npm/Bun CLI, global, SDK, JSON and TOON journey, checking every installed byte and declaration resolution."
-files[10]{path,scope}:
+files[11]{path,scope}:
   .gitignore,project
   dist/index.js,project
   index.ts,project
@@ -27,14 +27,16 @@ files[10]{path,scope}:
   src/citation-schema.ts,project
   src/selectors.ts,project
   test/distribution-helpers.ts,project
+  test/distribution-revert.acceptance.ts,project
   test/distribution.acceptance.ts,project
   test/fragment-sdk.test.ts,project
   test/install.acceptance.ts,project
-tests[4]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+tests[5]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node --test --test-concurrency=2 test/fragment-sdk.test.ts test/selectors.test.ts,project,codex-agent,"2026-10-29T08:34:13.363Z",local_mutation,fix/current-fragment-sdk
   "npm run test:install",project,codex-agent,"2026-10-29T08:45:13.517Z",local_mutation,fix/current-fragment-sdk
   node --test --test-concurrency=1 test/distribution.acceptance.ts,project,codex-agent,"2026-10-31T00:03:23.742Z",local_mutation,fix/current-fragment-sdk
   node --test --test-concurrency=1 test/install.acceptance.ts,project,codex-agent,"2026-10-31T00:03:26.146Z",local_mutation,fix/current-fragment-sdk
+  "npm run test:dist:revert",project,codex-agent,"2026-10-31T00:06:15.838Z",local_mutation,fix/current-fragment-sdk
 docs[1]{path,scope}:
   README.md,project
 body: ""

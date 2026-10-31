@@ -26,6 +26,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "test:dist:revert": "node --test --test-concurrency=1 test/distribution-revert.acceptance.ts",
     "dist:check": "node --test --test-concurrency=1 test/distribution.acceptance.ts",
     "build:test": "tsc -p tsconfig.test.json",
     "test": "npm run build && npm run build:test && node --test --test-concurrency=2 test/*.test.ts",
