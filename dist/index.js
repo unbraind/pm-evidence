@@ -15,7 +15,7 @@ export { fileAdapter, jsonAdapter } from './src/sources.js';
 /** Typed refusals and deterministic output cost estimates for consumers. */
 export { EvidenceError, tokens } from './src/core.js';
 /** Activate evidence commands and registered item fields in the pm host. */
-export default defineExtension({ name: 'pm-evidence', version: "2026.10.30", description: 'Exact source fragment freshness for agents', activate: register });
+export default defineExtension({ name: 'pm-evidence', version: "2026.10.31", description: 'Exact source fragment freshness for agents', activate: register });
 /** Runtime citation contracts shared by creation, verification and SDK consumers. */
 export { citationSchema, selectorSchema, ancestrySchema, parseCitation, validateRecord, RecordValidationError } from './src/citation-schema.js';
 //# sourceMappingURL=index.js.map
