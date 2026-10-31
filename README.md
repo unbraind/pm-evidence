@@ -75,7 +75,7 @@ After changing source or compiler inputs, run `npm run build` and commit all
 `dist/` changes with the source. Before any build in the release gate,
 `npm run dist:check` compares every committed and working compiled file with a
 pristine build, rejecting missing, stale and extra files. Commit the rebuilt
-artifacts before running that gate. `npm run test:install` checks npm and Bun
+artifacts before running that gate. `npm run test:install` requires Bun 1.4+ for local Git mirrors and checks npm and Bun
 local/global installs from both a packed tarball and a local Git mirror pinned
 to the exact `HEAD` commit, with scripts disabled. Each journey checks the full
 installed artifact graph, root exports, TypeScript declarations and native CLI

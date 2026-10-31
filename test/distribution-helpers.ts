@@ -26,3 +26,12 @@ export function assertArtifactGraph(expected: ReadonlyMap<string, Buffer>, obser
   assert.deepEqual([...observed.keys()].sort(), [...expected.keys()].sort(), `${label}: compiled file inventory differs`);
   for (const [path, bytes] of expected) assert.deepEqual(observed.get(path), bytes, `${label}: ${path} differs from the clean compiler output`);
 }
+
+/** Check every package runtime/type entrypoint, even fields superseded by conditional exports in modern loaders. */
+export function assertPackageEntrypoints(manifest: Record<string, unknown>, artifacts: ReadonlyMap<string, Buffer>): void {
+  /** Flatten nested conditional exports and named binary entries without assuming a single loader shape. */
+  const targets = (value: unknown): string[] => typeof value === 'string' ? [value] : value !== null && typeof value === 'object' ? Object.values(value).flatMap(targets) : [];
+  for (const field of ['main', 'types', 'exports', 'bin']) for (const target of targets(manifest[field])) {
+    assert.ok(artifacts.has(target.replace(/^\.\//, '')), `${field}: promised entrypoint ${target} is absent from the compiled graph`);
+  }
+}

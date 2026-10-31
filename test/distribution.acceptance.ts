@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { gitEnvironment, npmEnvironment } from '../scripts/environment.ts';
-import { artifactInventory, assertArtifactGraph, committedArtifacts } from './distribution-helpers.ts';
+import { artifactInventory, assertArtifactGraph, assertPackageEntrypoints, committedArtifacts } from './distribution-helpers.ts';
 
 /** Compile in a pristine tree so an old output file or an incremental local build cannot satisfy the gate. */
 function cleanBuild(root: string): Map<string, Buffer> {
@@ -21,6 +21,7 @@ test('every committed and working compiled artifact matches a pristine source bu
   const repository = resolve(import.meta.dirname, '..'); const expected = cleanBuild(root);
   assertArtifactGraph(expected, committedArtifacts(repository, 'HEAD', gitEnvironment(process.env)), 'HEAD');
   assertArtifactGraph(expected, artifactInventory(repository), 'working tree');
+  assertPackageEntrypoints(JSON.parse(readFileSync(join(repository, 'package.json'), 'utf8')) as Record<string, unknown>, expected);
   console.log(`Distribution: ${expected.size} committed artifacts match a pristine build`);
 });
 
@@ -35,6 +36,9 @@ test('graph oracle detects missing, stale and extra artifacts at every compiled 
     assert.throws(() => assertArtifactGraph(expected, stale, 'stale'), /differs from the clean compiler output/);
     const extra = new Map(expected); extra.set(`${path}.orphan`, bytes);
     assert.throws(() => assertArtifactGraph(expected, extra, 'extra'), /inventory differs/);
+  }
+  for (const field of ['main', 'types', 'exports', 'bin']) {
+    assert.throws(() => assertPackageEntrypoints({ [field]: { nested: './dist/missing.js' } }, expected), /promised entrypoint/);
   }
   console.log(`Distribution oracle: ${expected.size * 3} adversarial mutations refused`);
 });
