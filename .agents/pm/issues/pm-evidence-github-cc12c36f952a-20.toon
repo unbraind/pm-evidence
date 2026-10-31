@@ -6,14 +6,15 @@ status: in_progress
 priority: 2
 tags[2]: "gh:unbraind/pm-evidence#20","github_author:unbraind"
 created_at: "2026-10-29T09:00:44Z"
-updated_at: "2026-10-31T00:16:16.507Z"
+updated_at: "2026-10-31T00:49:49.692Z"
 assignee: codex-agent
 claim_principal: codex-agent
 author: pm-github
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-31T00:00:38.340Z",codex-agent,"Reusing imported issue item and PR task; implementing committed compiled artifacts, pristine-build drift verification, and scripts-disabled packed/git npm/Bun runtime plus TypeScript consumer checks. No review threads to reply to or resolve."
   "2026-10-31T00:01:14.388Z",codex-agent,"Exact-head audit: the reported missing-dist snapshot is superseded by dddf9e0, which tracks 56 compiled files. Complete the issue acceptance with reproducible git/tarball npm/Bun consumer journeys and full compiled graph drift checks; do not infer commit consumption from packed acceptance."
   "2026-10-31T00:16:16.507Z",codex-agent,"Revert acceptance is now demonstrated, not inferred: npm run test:dist:revert passed 2/2 controls. Removing only the committed compiled graph makes npm/Bun tarball and commit-pinned Git installation journeys fail 4/4 for the missing artifacts, and the source/parity gate fail 1/2. A single stale compiled runtime artifact independently makes parity fail 1/2. Fixed graph passes 2/2; all 56 compiled paths and every advertised manifest entrypoint are checked. Full npm/Bun release acceptance remains pending before issue closure."
+  "2026-10-31T00:49:49.692Z",codex-agent,"The artifact class also covers automated release preparation: local version/build outputs must be committed before checking the exact immutable dependency revision. Fixed workflow ordering while retaining all permission/approval gates and validation before packing/upload. Real disposable preparation passes; restoring only the previous ordering fails the same source/artifact parity check. Regression test passed 1/1."
 files[2]{path,scope}:
   test/distribution.acceptance.ts,project
   test/install.acceptance.ts,project
