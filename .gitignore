@@ -23,7 +23,7 @@ coverage/
 
 
 
-dist/
+# Compiled text artifacts are committed for scripts-disabled Git consumers.
 
 
 

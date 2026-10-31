@@ -175,10 +175,6 @@ jobs:
           npm run changelog:check
           npm run release:notes > RELEASE_NOTES.md
 
-      - name: Run release checks
-        if: steps.decide.outputs.should_release == 'true'
-        run: npm run release:check
-
       - name: Commit release files
         if: steps.decide.outputs.should_release == 'true'
         env:
@@ -199,6 +195,11 @@ jobs:
           else
             git commit -m "Release ${REPO_NAME} ${RELEASE_TAG}"
           fi
+
+      # Validate the prepared commit so Git consumers receive the same files as the tarball.
+      - name: Run release checks
+        if: steps.decide.outputs.should_release == 'true'
+        run: npm run release:check
 
       - name: Pack verified release artifact
         id: pack

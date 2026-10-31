@@ -2,12 +2,24 @@ id: pm-evidence-github-cc12c36f952a-20
 title: Commit-pinned fragment SDK lacks the compiled entrypoints promised for scripts-disabled consumers
 description: "GH issue #20: https://github.com/unbraind/pm-evidence/issues/20 · author @unbraind · created 2026-10-29T09:00:44Z · updated 2026-10-29T09:00:44Z"
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[2]: "gh:unbraind/pm-evidence#20","github_author:unbraind"
 created_at: "2026-10-29T09:00:44Z"
-updated_at: "2026-10-29T10:01:23.533Z"
+updated_at: "2026-10-31T03:01:56.407Z"
 author: pm-github
+comments[8]{created_at,author,text}:
+  "2026-10-31T00:00:38.340Z",codex-agent,"Reusing imported issue item and PR task; implementing committed compiled artifacts, pristine-build drift verification, and scripts-disabled packed/git npm/Bun runtime plus TypeScript consumer checks. No review threads to reply to or resolve."
+  "2026-10-31T00:01:14.388Z",codex-agent,"Exact-head audit: the reported missing-dist snapshot is superseded by dddf9e0, which tracks 56 compiled files. Complete the issue acceptance with reproducible git/tarball npm/Bun consumer journeys and full compiled graph drift checks; do not infer commit consumption from packed acceptance."
+  "2026-10-31T00:16:16.507Z",codex-agent,"Revert acceptance is now demonstrated, not inferred: npm run test:dist:revert passed 2/2 controls. Removing only the committed compiled graph makes npm/Bun tarball and commit-pinned Git installation journeys fail 4/4 for the missing artifacts, and the source/parity gate fail 1/2. A single stale compiled runtime artifact independently makes parity fail 1/2. Fixed graph passes 2/2; all 56 compiled paths and every advertised manifest entrypoint are checked. Full npm/Bun release acceptance remains pending before issue closure."
+  "2026-10-31T00:49:49.692Z",codex-agent,"The artifact class also covers automated release preparation: local version/build outputs must be committed before checking the exact immutable dependency revision. Fixed workflow ordering while retaining all permission/approval gates and validation before packing/upload. Real disposable preparation passes; restoring only the previous ordering fails the same source/artifact parity check. Regression test passed 1/1."
+  "2026-10-31T01:52:28.767Z",codex-agent,"Issue acceptance now has real positive consumer proof: test:install passed 4/4 (npm and Bun, packed tarballs and exact c3ffc7895fead77733ea97eaeffedd9c8ae140d9 Git dependencies), scripts disabled, matching all 56 compiled bytes, root SDK imports and strict declaration compilation, local/global native commands with JSON/TOON on non-Git trackers. Pack digest and separate Git revision receipts are recorded on the PR task. Missing/stale-artifact and release-order reverts remain proven. Full Bun gate is pending; the npm gate has a documented single host timeout with the entire unchanged schema-boundary corpus passed on retry and all remaining gate stages passed."
+  "2026-10-31T02:54:10.982Z",codex-agent,"Acceptance completed on c3ffc7895fead77733ea97eaeffedd9c8ae140d9: npm/Bun tarball and commit-pinned Git consumer matrices each passed 4/4 twice, scripts disabled, exact installed 56-file compiled graph, strict root declaration compilation, SDK source-preserving fragments and local/global native commands on non-Git trackers. Full Bun units passed 178/178 and reconciled coverage 100/100/100/100 across all 24 configured sources; npm single worker timeout passed the complete unchanged 285-case retry and the same Bun coverage case. Transient audit request passed unchanged retries with zero vulnerabilities; all remaining release stages passed. Missing/stale compiled artifacts and former release preparation ordering each fail the recorded behavioral controls. Ready to close GitHub issue #20 after pushing these fixes and receipts; leave this pm item for orchestrator verification/closure."
+  "2026-10-31T03:00:04.079Z",codex-agent,"GitHub issue #20 is now closed with public commit/test evidence: https://github.com/unbraind/pm-evidence/issues/20 . Fix/evidence push d784692e951533caa7b11e7ae48c481a1729d0ac; runtime/config code tested at c3ffc7895fead77733ea97eaeffedd9c8ae140d9. First CI run https://github.com/unbraind/pm-evidence/actions/runs/41162252768 is in progress; final tracker-only receipt push requires fresh checks at https://github.com/unbraind/pm-evidence/pull/19/checks . Leave the pm item in_progress and unclaimed for orchestrator verification/closure; no PM item was closed."
+  "2026-10-31T03:01:56.406Z",codex-agent,"Closure timing correction: the preceding status receipt was premature after an old gh PR-edit query failed. The explicit gh issue close 20 command has now completed successfully; independent REST read-back verifies state=closed and the exact d784692/c3ffc78 commit-plus-test evidence comment. Preserve the earlier audit event and this correction. The PR body REST write was also read back exactly. This pm item remains in_progress and unclaimed for orchestrator verification; final tracker-only push requires fresh CI at https://github.com/unbraind/pm-evidence/pull/19/checks ."
+files[2]{path,scope}:
+  test/distribution.acceptance.ts,project
+  test/install.acceptance.ts,project
 github_close_reason: ""
 github_closed_at: ""
 github_created_at: "2026-10-29T09:00:44Z"

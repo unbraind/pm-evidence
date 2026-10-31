@@ -29,6 +29,8 @@ export const anchorSchema = z.strictObject({ quote: sourceText.min(1), before: s
 const sourcePath = sourceText.min(1).refine(value => { try { sourceIdentity(value); return true; } catch { return false; } });
 /** Source descriptors use the same selector and ancestry schemas as their producers. */
 export const descriptorSchema = z.strictObject({ provider: sourceText.min(1), source: sourcePath, revision: z.string().regex(/^[a-f0-9]{64}$/), selector: selectorSchema, anchor: anchorSchema.optional(), jsonEncoding: z.literal('source-bytes-v1').optional() });
+/** Public fragment reads share the exact text and descriptor contracts used by citation producers. */
+export const fragmentRequestSchema = z.strictObject({ text: sourceText, descriptor: descriptorSchema });
 /** Review dispositions are package observations, independent of tracker lifecycle statuses. */
 const dispositionSchema = z.enum(['still-valid', 're-anchored', 'superseded', 'invalid']);
 /** Native package observation shape shared by review writes and citation reads. */

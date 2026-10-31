@@ -30,6 +30,15 @@ The package exports its SDK through `main` and `types` and registers commands
 with pm. It has no standalone `bin`: use `npx pm` or `bunx --bun pm` through
 the installed host. npm/Bun dependency installation alone does not activate it.
 
+`resolveFragmentText(sourceText, citation.descriptor)` resolves current fragment
+text through the same exact resolver as `check`, without I/O, tracker writes or
+retained historical bytes. Supply an authorized immutable snapshot and a
+producer-valid descriptor. The shared strict schema bounds source text to
+16,777,216 UTF-16 code units. JSON pointers return raw source spans, preserving
+large integers, exponent spelling, escapes, whitespace and own `__proto__` keys.
+It throws `EvidenceError` with a remedy for invalid or unresolved requests.
+This pure SDK operation works without Git. Retained originals still use `replay`.
+
 ## Install
 
 Requires Node 22.18+ and pm 2026.10.23+. Built-in file/JSON reads require Linux with accessible procfs descriptor links and fail closed on unsupported platforms; no weaker path-only mode is enabled. From this checkout:
@@ -37,14 +46,41 @@ Requires Node 22.18+ and pm 2026.10.23+. Built-in file/JSON reads require Linux 
 ```sh
 npm ci
 npm pack
-# In the consuming project, use the generated tarball:
-npm install ./pm-evidence-2026.10.23.tgz @unbrained/pm-cli@2026.10.23
+# In the consuming project, replace VERSION with the version in the emitted filename:
+npm install --ignore-scripts ./pm-evidence-VERSION.tgz @unbrained/pm-cli
 npx --no-install pm init --defaults --agent-guidance skip
-npx --no-install pm package install ./pm-evidence-2026.10.23.tgz
+npx --no-install pm package install ./node_modules/pm-evidence
 npx --no-install pm evidence --help
 ```
 
-Bun uses `bun add ./pm-evidence-2026.10.23.tgz @unbrained/pm-cli@2026.10.23`, then `bunx --bun --no-install pm package install ./pm-evidence-2026.10.23.tgz` and `bunx --bun --no-install pm evidence --help`. Once installed and activated, use `pm evidence` normally. npm scripts can invoke `pm evidence`; `npm run` and `bun run` both work. The packed acceptance suite exercises npm, npx, bun and bunx plus in-process SDK imports.
+Bun uses `bun add --ignore-scripts ./pm-evidence-VERSION.tgz @unbrained/pm-cli`, using the emitted version, then `bunx --bun --no-install pm package install ./node_modules/pm-evidence` and `bunx --bun --no-install pm evidence --help`. Once installed and activated, use `pm evidence` normally. npm scripts can invoke `pm evidence`; `npm run` and `bun run` both work. The packed acceptance suite exercises npm, npx, bun and bunx plus in-process SDK imports.
+
+## Scripts-disabled consumers and committed builds
+
+The Git tree includes the complete `dist/` runtime, declaration and source-map
+graph. An approved immutable commit can be installed with lifecycle scripts
+disabled; replace `COMMIT_SHA` with its full 40-character revision:
+
+```sh
+npm install --ignore-scripts 'git+https://github.com/unbraind/pm-evidence.git#COMMIT_SHA' @unbrained/pm-cli
+bun add --ignore-scripts 'git+https://github.com/unbraind/pm-evidence.git#COMMIT_SHA' @unbrained/pm-cli
+```
+
+A tarball emitted by `npm pack` supports the same `--ignore-scripts` install.
+Activate either dependency with `pm package install ./node_modules/pm-evidence`
+in an initialized tracker. Import the SDK and its types from `pm-evidence`.
+No Git repository is required in the consuming project.
+
+After changing source or compiler inputs, run `npm run build` and commit all
+`dist/` changes with the source. Before any build in the release gate,
+`npm run dist:check` compares every committed and working compiled file with a
+pristine build, rejecting missing, stale and extra files. Commit the rebuilt
+artifacts before running that gate. `npm run test:install` requires Bun 1.4+ for local Git mirrors and checks npm and Bun
+local/global installs from both a packed tarball and a local Git mirror pinned
+to the exact `HEAD` commit, with scripts disabled. Each journey checks the full
+installed artifact graph, root exports, TypeScript declarations and native CLI
+JSON/TOON commands in a non-Git tracker. It reports the source revision and
+packed artifact digest separately; these checks do not publish to npm.
 
 ## Commands
 
