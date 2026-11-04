@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Update the toolchain and render empty daily changelog windows ([pm-evidence-toolchain-1104](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/chores/pm-evidence-toolchain-1104.toon))
+
+## 2026.11.3 - 2026-11-03
+
+No changes.
+
+## 2026.11.2 - 2026-11-02
+
+No changes.
+
 ## 2026.10.31 - 2026-10-31
 
 ### Fixed
