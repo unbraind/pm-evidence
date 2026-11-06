@@ -76,12 +76,25 @@ test('canonical operands allow confined parents and refuse unusable inputs befor
   const f = await tracker(t); const before = (await f.client.get(f.item, { full: true })).item;
   assert.equal(sourceIdentity('docs/part/../sample.txt/'), 'docs/sample.txt');
   for (const operand of [undefined, null, 42]) assert.throws(() => sourceIdentity(operand as unknown as string), { code: 'invalid' });
-  for (const source of ['', '.', './', 'docs/..', '..', '../escape', 'docs/../../escape', '/absolute', 'C:drive', './C:drive', 'bad\\path', 'bad\u0000path']) {
+  for (const source of ['', '..', '../escape', 'docs/../../escape', '/absolute', 'C:drive', './C:drive', 'bad\\path', 'bad\u0000path']) {
     assert.throws(() => sourceIdentity(source), error => error instanceof EvidenceError && error.code === 'invalid' && error.remedy.length > 0);
     await assert.rejects(affected({ ...f.options, changed: [source] }), { code: 'invalid' });
     await assert.rejects(cite(f.item, source, { ...f.options, selector: { kind: 'lines', start: 1, end: 1 } }), { code: 'invalid' });
   }
   assert.deepEqual((await f.client.get(f.item, { full: true })).item, before);
+});
+
+test('canonical root identities preserve released adapter citations and keep stock directory refusals', async t => {
+  const f = await tracker(t); let text = '{"x":1}';
+  const adapters = ['file', 'json', 'opaque'].map(provider => ({ provider, read: async () => ({ text, revision: digest(text) }) }));
+  for (const provider of ['file', 'json', 'opaque']) await cite(f.item, '.', { ...f.options, provider, adapters, selector: provider === 'json' ? { kind: 'pointer', pointer: '/x' } : { kind: 'lines', start: 1, end: 1 } });
+  text = '{"x":2}';
+  const result = await affected({ ...f.options, adapters, changed: ['.'], budget: 10000 });
+  assert.equal(result.rows.length, 3); assert.ok(result.rows.every(row => row.freshness === 'changed')); assert.equal(result.receipt.sourceComplete, true);
+  for (const source of ['.', './', 'docs/..']) {
+    assert.equal(sourceIdentity(source), '.');
+    await assert.rejects(cite(f.item, source, { ...f.options, selector: { kind: 'lines', start: 1, end: 1 } }), { code: 'inaccessible' });
+  }
 });
 
 test('canonical inside-root symlink spellings remain matched and readable', async t => {

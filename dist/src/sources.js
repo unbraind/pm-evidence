@@ -10,7 +10,7 @@ export function sourceIdentity(source, provider = 'file') {
         return source.replace(/^\.\//, '');
     }
     const identity = posix.normalize(source).replace(/\/$/, '');
-    requireInput(identity !== '.' && identity !== '..' && !identity.startsWith('../') && !/^[a-z]:/i.test(identity), 'Source must name a path inside the selected root');
+    requireInput(identity !== '..' && !identity.startsWith('../') && !/^[a-z]:/i.test(identity), 'Source must name a path inside the selected root');
     return identity;
 }
 /** Require a canonical path to stay inside the caller's canonical root. */

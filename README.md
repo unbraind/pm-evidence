@@ -133,6 +133,8 @@ Malformed citations produce individual `code:schema` rows with a one-based `cita
 
 Built-in file and JSON sources share one lexical root-relative identity: leading/internal `./`, repeated slashes, confined `..` segments and trailing slashes normalize before citation writes, changed-source comparisons and snapshot-cache lookups. Legacy stored spellings are compared through that same function without rewriting their citation records. Invalid operands return a typed refusal with a remedy; malformed stored citations remain explicit unresolved rows. Absolute paths, escaping parents and outside-root symlinks still refuse. Inside-root symlinks remain readable under their lexical identity; a symlink alias and its target are distinct identities. Custom providers retain their existing identifier rules (including distinct repeated separators), and `scope.changed` preserves the supplied filter operands.
 
+The canonical root identity `.` remains available to trusted adapters, including overrides of built-in providers. The stock filesystem reader still requires a regular file and refuses directories.
+
 Review dispositions are `still-valid`, `re-anchored`, `superseded`, `invalid`. The reason is required. Re-anchoring follows the unique exact current fragment and adds a separate citation; the original stays intact. To repair an ambiguous anchor, pass an explicit replacement `--lines`, `--heading` or `--pointer` selector with the re-anchored disposition. `--expected-revision` can require the evidence revision returned by show. Distinct reviewers cannot overwrite each other's observations; identical retries deduplicate. Other dispositions record the review without silently rewriting evidence.
 
 ## Criterion-bound source support
@@ -274,7 +276,7 @@ SDK consumers can use `bundleTarget`, `setBundleConsent`, `exportBundle`, `valid
 
 ## Without git
 
-Cite, check, affected, review, show, retained replay, bundle consent/export/inspect/import and all SDK APIs work in ordinary initialized trackers without git. No evidence command invokes git. The development identity audit and the optional public-data and function-revert evaluation harnesses require git; neither is part of evidence command execution.
+Cite, check, affected, review, show, retained replay, bundle consent/export/inspect/import and all SDK APIs work in ordinary initialized trackers without git. No evidence command invokes git. The development identity audit, optional public-data evaluation and older Git-based revert harnesses require git; none is part of evidence command execution. The canonical path proof (`node test/source-paths-revert.acceptance.ts`) uses immutable, hash-checked function fixtures and runs its builds and tests in a Git-free disposable copy.
 
 ## Exit codes and development
 

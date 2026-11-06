@@ -5,6 +5,7 @@ import { cp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { withSourceCopy } from './revert-control.ts';
+import { digest } from '../src/core.ts';
 
 /** Extract a complete column-aligned function, retaining its public signature during body reverts. */
 function body(source: string, name: string, method = false): string {
@@ -12,11 +13,16 @@ function body(source: string, name: string, method = false): string {
   const match = source.match(pattern); assert.ok(match, name); return match[0];
 }
 
-await withSourceCopy(async (root, repository) => {
-  await cp(join(repository, 'tsconfig.json'), join(root, 'tsconfig.json'));
+await withSourceCopy(async (root, sourceRepository) => {
+  await cp(join(sourceRepository, 'tsconfig.json'), join(root, 'tsconfig.json'));
+  const repository = root;
+  const fixture = JSON.parse(await readFile(join(root, 'test/fixtures/source-paths-baselines.json'), 'utf8')) as { functions: Record<string, string>; sha256: Record<string, string> };
+  const baselines = new Map(Object.entries(fixture.functions)); const hashes = new Map(Object.entries(fixture.sha256));
+  for (const [name, baseline] of baselines) assert.equal(digest(baseline), hashes.get(name), `Immutable baseline fixture ${name}`);
   const options = { cwd: root, encoding: 'utf8' as const, timeout: 240000, env: { PATH: process.env.PATH, GIT_CEILING_DIRECTORIES: tmpdir() } };
   const cases = [
-    { file: 'src/sources.ts', name: 'sourceIdentity', pattern: '^canonical (?!custom-provider)', failures: 13 },
+    { file: 'src/sources.ts', name: 'sourceIdentity', pattern: '^canonical (?!custom-provider)', failures: 14 },
+    { file: 'src/sources.ts', name: 'sourceIdentity', revision: 'fd1453b', fixture: 'rootIdentityGuard', pattern: '^canonical root identities', failures: 1 },
     { file: 'src/evidence.ts', name: 'affected', pattern: '^canonical spelling', failures: 7 },
     { file: 'src/evidence.ts', name: 'prepare', pattern: '^canonical custom-provider', failures: 1 },
     { file: 'src/sources.ts', name: 'snapshot', pattern: '^canonical custom-provider', failures: 1 },
@@ -25,8 +31,8 @@ await withSourceCopy(async (root, repository) => {
   ];
   for (const proof of cases) {
     const path = join(root, proof.file); const fixed = await readFile(path, 'utf8'); const current = body(fixed, proof.name, proof.method);
-    const baseline = execFileSync('git', ['show', `6e626ce:${proof.file}`], { cwd: repository, encoding: 'utf8' });
-    let replacement = body(baseline, proof.name, proof.method);
+    const baseline = baselines.get(proof.fixture ?? proof.name); assert.ok(baseline, proof.name);
+    let replacement = baseline;
     if (proof.name === 'sourceIdentity') replacement = current.slice(0, current.indexOf('\n')) + replacement.slice(replacement.indexOf('\n'));
     if (proof.name === 'affected') replacement = replacement.replace('map(sourceIdentity)', 'map(source => sourceIdentity(source))');
     assert.notEqual(replacement, current);
@@ -41,6 +47,6 @@ await withSourceCopy(async (root, repository) => {
     } finally { await writeFile(path, fixed); build(); }
     const restored = spawnSync(process.execPath, args, options);
     assert.deepEqual({ error: restored.error, status: restored.status }, { error: undefined, status: 0 }, restored.stdout + restored.stderr);
-    console.log(JSON.stringify({ function: proof.name, pattern: proof.pattern, revertedFailures: proof.failures, restored: 'pass', disposableCopy: true, rebuiltSdk: true }));
+    console.log(JSON.stringify({ function: proof.name, baseline: proof.revision ?? '6e626ce', pattern: proof.pattern, revertedFailures: proof.failures, restored: 'pass', disposableCopy: true, rebuiltSdk: true }));
   }
 });
