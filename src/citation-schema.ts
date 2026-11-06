@@ -25,10 +25,8 @@ export function boundedArray<T extends z.ZodType>(element: T, maximum: number) {
 export const ancestrySchema = boundedArray(headingText, 6);
 /** Anchors retain exact selected and neighboring text from the same source snapshot. */
 export const anchorSchema = z.strictObject({ quote: sourceText.min(1), before: sourceText, after: sourceText, sectionPath: ancestrySchema.optional() });
-/** Source identities reuse the same containment operand policy as citation creation. */
-const sourcePath = sourceText.min(1).refine(value => { try { sourceIdentity(value); return true; } catch { return false; } });
 /** Source descriptors use the same selector and ancestry schemas as their producers. */
-export const descriptorSchema = z.strictObject({ provider: sourceText.min(1), source: sourcePath, revision: z.string().regex(/^[a-f0-9]{64}$/), selector: selectorSchema, anchor: anchorSchema.optional(), jsonEncoding: z.literal('source-bytes-v1').optional() });
+export const descriptorSchema = z.strictObject({ provider: sourceText.min(1), source: sourceText.min(1), revision: z.string().regex(/^[a-f0-9]{64}$/), selector: selectorSchema, anchor: anchorSchema.optional(), jsonEncoding: z.literal('source-bytes-v1').optional() }).refine(({ source, provider }) => { try { sourceIdentity(source, provider); return true; } catch { return false; } }, { path: ['source'] });
 /** Public fragment reads share the exact text and descriptor contracts used by citation producers. */
 export const fragmentRequestSchema = z.strictObject({ text: sourceText, descriptor: descriptorSchema });
 /** Review dispositions are package observations, independent of tracker lifecycle statuses. */

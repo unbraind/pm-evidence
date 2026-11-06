@@ -1,9 +1,10 @@
 import { artifactKey, certifyCompleteListResult, dedupeLinkedArtifacts, getHistoryPath, mutateItem, nowIso, parseAnnotationTextInput, PmClient, readHistoryEntries, readSettings, selectImportAuthor, verifyHistoryEntries } from '@unbrained/pm-cli/sdk';
-import type { GetResult, ItemDocument, PmCompleteListResult } from '@unbrained/pm-cli/sdk';
+import type { GetResult, ItemDocument, LinkedArtifact, PmCompleteListResult } from '@unbrained/pm-cli/sdk';
 import type { SchemaFieldDefinition } from '@unbrained/pm-cli/sdk/authoring';
 import type { Citation, CheckRow, EvidenceOptions, EvidenceState } from './types.ts';
 import { digest, EvidenceError } from './core.ts';
 import { parseCitation, envelope, validateRecord } from './citation-schema.ts';
+import { sourceIdentity } from './sources.ts';
 import type { EvidenceEnvelope } from './citation-schema.ts';
 
 /** Synchronous and asynchronous producers share one fresh native-target callback contract. */
@@ -13,10 +14,17 @@ export type EvidenceGuard = (item: Pick<GetResult['item'], 'id' | 'acceptance_cr
 /** A locked exchange computes its result from current native state, with an optional evidence write. */
 export interface EvidenceExchange<T> { result: T; value?: EvidenceState; observation?: string }
 
+/** Compare local project links canonically while preserving native links from other path domains. */
+function sourceArtifactKey(file: LinkedArtifact): string {
+  if (file.scope !== 'project' || /^[a-z][a-z0-9+.-]*:\/\//i.test(file.path)) return artifactKey(file);
+  try { return artifactKey({ ...file, path: sourceIdentity(file.path) }); }
+  catch { return artifactKey(file); }
+}
+
 /** One SDK-owned native metadata projection for both conditional and locked evidence writes. */
 function writeEvidence(document: ItemDocument, value: EvidenceState, observation: string, author: string): string[] {
-  const owned = new Set((document.metadata.files ?? []).map(artifactKey));
-  const files = [...new Set(value.citations.filter(entry => ['file', 'json'].includes(entry.descriptor.provider)).map(entry => entry.descriptor.source))].map(source => ({ path: source, scope: 'project' as const, note: 'pm-evidence source identity relative to caller-selected root' })).filter(file => !owned.has(artifactKey(file)));
+  const owned = new Set((document.metadata.files ?? []).map(sourceArtifactKey));
+  const files = [...new Set(value.citations.filter(entry => ['file', 'json'].includes(entry.descriptor.provider)).map(entry => sourceIdentity(entry.descriptor.source, entry.descriptor.provider)))].map(source => ({ path: source, scope: 'project' as const, note: 'pm-evidence source identity relative to caller-selected root' })).filter(file => !owned.has(sourceArtifactKey(file)));
   Object.assign(document.metadata, { evidence_state: JSON.stringify(value), ...(files.length > 0 ? { files: [...document.metadata.files ?? [], ...dedupeLinkedArtifacts(files)] } : {}), comments: [...document.metadata.comments ?? [], { text: parseAnnotationTextInput(observation), author, created_at: nowIso() }] });
   return ['evidence_state', 'comments', ...(files.length > 0 ? ['files'] : [])];
 }

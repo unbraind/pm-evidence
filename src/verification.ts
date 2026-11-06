@@ -51,7 +51,7 @@ export class Verification {
   /** Resolve every selector against the same provider/source bytes, including across cited revisions. */
   async read(provider: string, source: string): Promise<SourceSnapshot> {
     if (this.canceled()) throw new EvidenceError('canceled', 'Verification was canceled', 'Retry the check with a live signal; this receipt is incomplete');
-    const identity = sourceIdentity(source); const key = JSON.stringify([provider, identity]);
+    const identity = sourceIdentity(source, provider); const key = JSON.stringify([provider, identity]);
     let read = this.reads.get(key);
     if (read === undefined) {
       if (this.reads.size >= MAX_ENTRIES) throw new EvidenceError('size', 'Verification source limit reached', 'Split the check into batches of at most 10000 sources');

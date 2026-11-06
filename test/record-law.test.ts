@@ -58,7 +58,7 @@ test('every schema boundary follows the complete-record write/read law', async t
     const value = structuredClone(base); value.citations[0].descriptor.selector = { kind: 'pointer', pointer };
     if (pointer === '/~01') assert.doesNotThrow(() => validateRecord(value)); else assert.throws(() => validateRecord(value), RecordValidationError);
   }
-  for (const source of ['../escape', '/absolute', 'a/../escape']) { const value = structuredClone(base); value.citations[0].descriptor.source = source; assert.throws(() => validateRecord(value), RecordValidationError); }
+  for (const source of ['../escape', '/absolute', 'a/../../escape']) { const value = structuredClone(base); value.citations[0].descriptor.source = source; assert.throws(() => validateRecord(value), RecordValidationError); }
   const duplicate = structuredClone(base); duplicate.citations.push(duplicate.citations[0]); assert.throws(() => validateRecord(duplicate), RecordValidationError);
   const sparse = structuredClone(base); sparse.citations = Array(1); assert.throws(() => validateRecord(sparse), RecordValidationError);
   const reverse = structuredClone(base); reverse.citations[0].descriptor.selector = { kind: 'lines', start: 2, end: 1 }; assert.throws(() => validateRecord(reverse), RecordValidationError);

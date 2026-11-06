@@ -1,0 +1,31 @@
+id: pm-evidence-canonical-source-paths
+title: Match canonical source paths in affected changed filters
+description: "Fix issue #40: normalize built-in source paths across citation writes, legacy comparisons and invocation read keys; preserve source confinement and explicit refusals."
+type: Issue
+status: in_progress
+priority: 2
+tags[3]: bug,"gh:unbraind/pm-evidence#40",paths
+created_at: "2026-11-06T11:28:15.691Z"
+updated_at: "2026-11-06T11:44:59.176Z"
+author: codex-sol
+comments[4]{created_at,author,text}:
+  "2026-11-06T11:28:32.071Z",codex-sol,"Confirmed literal pre-read filtering drops equivalent legacy descriptors. Plan: one provider-aware lexical path normalizer for built-in file/JSON citation identity, comparisons and read keys; retain custom-provider identity policy and realpath/descriptor confinement. Test spelling classes, legacy records, dependency paths, cache coalescing, typed invalid operands and symlink confinement using real no-git trackers, then behavioral reverts in a disposable copy."
+  "2026-11-06T11:34:31.115Z",codex-sol,"Implemented provider-aware lexical canonicalization and legacy comparison normalization; invocation caches and native source-link comparisons share it. Built-in JSON follows the same path policy; custom providers retain their prior identity contract. Added fourteen regression cases across source and built SDK, including dependencies, canonical cache coalescing, inside/outside symlinks and invalid-operand refusal. First focused run found a fixture-only optional note mismatch; corrected the assertion to use native SDK read-back as its oracle."
+  "2026-11-06T11:43:55.600Z",codex-sol,"Validation: built/source spelling regressions 14/14 and pinned PM linked run 14/14 pass; existing evidence/CLI/selector suites 18/18 pass. Build, lint, typecheck, duplication (0 percent), and docstring gates pass. Behavioral reverts in a disposable source copy rebuild the SDK each time: sourceIdentity fails 13 cases; affected fails all 7 spelling cases; prepare, snapshot and Verification.read each fail the custom-provider case; writeEvidence fails the native ownership case. Every restored selection passes. Command: node test/source-paths-revert.acceptance.ts. Full release gates are delegated to CI as specified in the issue task."
+  "2026-11-06T11:44:59.167Z",codex-sol,"Local strict health: history, integrity, storage, locks and merge-driver requirements pass; the only failure is the managed pm-github extension host receipt version skew (2026.11.4 versus 2026.11.5), tracked separately as pm-evidence-local-extension-skew. No dependency pin or extension configuration was changed for this fix. Fresh CI health remains authoritative for the committed tree."
+files[9]{path,scope}:
+  src/citation-schema.ts,project
+  src/evidence.ts,project
+  src/sources.ts,project
+  src/store.ts,project
+  src/verification.ts,project
+  test/evidence.test.ts,project
+  test/record-law.test.ts,project
+  test/source-paths-revert.acceptance.ts,project
+  test/source-paths.test.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node --test --test-concurrency=2 test/source-paths.test.ts,project,codex-sol,"2026-11-06T11:34:39.031Z",local_mutation,affected-matches-canonical-source-paths
+docs[2]{path,scope}:
+  ARCHITECTURE.md,project
+  README.md,project
+body: "[GitHub issue #40](https://github.com/unbraind/pm-evidence/issues/40)"

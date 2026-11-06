@@ -10,7 +10,7 @@ import type { AffectedOptions, CheckOptions, CheckRow, Citation, CiteOptions, Ev
 /** Build a source-bound citation without reading or rewriting the native item schema. */
 async function prepare(item: string, source: string, options: CiteOptions, author: string, sourceSnapshot?: SourceSnapshot, sectionScoped = false): Promise<Citation> {
   const selector = parseSelector(options.selector);
-  const identity = sourceIdentity(source); const provider = options.provider ?? (selector.kind === 'pointer' ? 'json' : 'file');
+  const provider = options.provider ?? (selector.kind === 'pointer' ? 'json' : 'file'); const identity = sourceIdentity(source, provider);
   requireInput(provider !== 'json' || selector.kind === 'pointer', 'JSON sources require a pointer selector');
   const read = sourceSnapshot ?? await snapshot(provider, identity, options); const selected = select(read.text, selector);
   const descriptor: Descriptor = { provider, source: identity, revision: read.revision, selector, ...(selector.kind === 'pointer' ? { jsonEncoding: 'source-bytes-v1' as const } : { anchor: anchor(read.text, selected, selector.kind === 'heading' || sectionScoped) }) };
@@ -94,16 +94,23 @@ function verificationState(raw: unknown, verification: Verification) {
 /** Traverse SDK relationships from changed evidence with explicit depth and output receipts. */
 export async function affected(options: AffectedOptions) {
   verificationInput([], options); const verification = new Verification(options); const settings = verification.options;
+  const paths = settings.changed?.map(source => sourceIdentity(source));
+  const changedPaths = new Map<string, Set<string>>(paths === undefined ? [] : [['file', new Set(paths)], ['json', new Set(paths)]]);
   const store = new Store(settings); const items = await store.all(); const native = RelationshipGraph.fromItems(items); const graph = new RelationshipGraph(native.nodes(), native.edges().map(edge => edge.kind === 'parent' ? { ...edge, source: edge.target, target: edge.source } : edge)); const rows: Impact[] = []; let sourceComplete = true;
   const depth = settings.depth ?? 2; const limit = settings.limit ?? 100;
-  const paths = settings.changed?.map(sourceIdentity); let checked = 0;
+  let checked = 0;
   requireInput(items.length <= 10_000, 'Impact scope exceeds 10000 items');
   for (const item of items) {
     const seen = new Set<string>();
     for (const [index, citation] of (verificationState(item.evidence_state, verification)?.citations ?? []).entries()) {
       if (paths !== undefined) {
         const parsed = citationSchema.safeParse(citation);
-        if (parsed.success && parsed.data.provenance.item === item.id && !paths.includes(parsed.data.descriptor.source) && !seen.has(parsed.data.id)) { seen.add(parsed.data.id); continue; }
+        if (parsed.success && parsed.data.provenance.item === item.id && !seen.has(parsed.data.id)) {
+          const { provider, source } = parsed.data.descriptor;
+          let changed = changedPaths.get(provider);
+          if (changed === undefined) { changed = new Set(settings.changed!.map(operand => sourceIdentity(operand, provider))); changedPaths.set(provider, changed); }
+          if (!changed.has(sourceIdentity(source, provider))) { seen.add(parsed.data.id); continue; }
+        }
       }
       checked++;
       requireInput(checked <= 10_000, 'Impact scope exceeds 10000 citations');
@@ -119,7 +126,7 @@ export async function affected(options: AffectedOptions) {
       }
     }
   }
-  return packet(rows, { items: items.length, citations: checked, depth, changed: paths, traversalLimit: limit }, settings.budget, sourceComplete && !verification.canceled() && verification.receipt.foreignItems === 0, verification.finish());
+  return packet(rows, { items: items.length, citations: checked, depth, changed: settings.changed, traversalLimit: limit }, settings.budget, sourceComplete && !verification.canceled() && verification.receipt.foreignItems === 0, verification.finish());
 }
 /** Re-anchor one coherent current snapshot, using exact recovery or an explicit replacement selector. */
 async function reanchor(item: string, original: Citation, options: ReviewOptions, author: string): Promise<Citation> {

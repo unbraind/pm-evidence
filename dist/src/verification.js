@@ -55,7 +55,7 @@ export class Verification {
     async read(provider, source) {
         if (this.canceled())
             throw new EvidenceError('canceled', 'Verification was canceled', 'Retry the check with a live signal; this receipt is incomplete');
-        const identity = sourceIdentity(source);
+        const identity = sourceIdentity(source, provider);
         const key = JSON.stringify([provider, identity]);
         let read = this.reads.get(key);
         if (read === undefined) {
