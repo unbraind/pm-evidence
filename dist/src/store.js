@@ -1,10 +1,22 @@
 import { artifactKey, certifyCompleteListResult, dedupeLinkedArtifacts, getHistoryPath, mutateItem, nowIso, parseAnnotationTextInput, PmClient, readHistoryEntries, readSettings, selectImportAuthor, verifyHistoryEntries } from '@unbrained/pm-cli/sdk';
 import { digest, EvidenceError } from './core.js';
 import { parseCitation, envelope, validateRecord } from './citation-schema.js';
+import { sourceIdentity } from './sources.js';
+/** Compare local project links canonically while preserving native links from other path domains. */
+function sourceArtifactKey(file) {
+    if (file.scope !== 'project' || /^[a-z][a-z0-9+.-]*:\/\//i.test(file.path))
+        return artifactKey(file);
+    try {
+        return artifactKey({ ...file, path: sourceIdentity(file.path) });
+    }
+    catch {
+        return artifactKey(file);
+    }
+}
 /** One SDK-owned native metadata projection for both conditional and locked evidence writes. */
 function writeEvidence(document, value, observation, author) {
-    const owned = new Set((document.metadata.files ?? []).map(artifactKey));
-    const files = [...new Set(value.citations.filter(entry => ['file', 'json'].includes(entry.descriptor.provider)).map(entry => entry.descriptor.source))].map(source => ({ path: source, scope: 'project', note: 'pm-evidence source identity relative to caller-selected root' })).filter(file => !owned.has(artifactKey(file)));
+    const owned = new Set((document.metadata.files ?? []).map(sourceArtifactKey));
+    const files = [...new Set(value.citations.filter(entry => ['file', 'json'].includes(entry.descriptor.provider)).map(entry => sourceIdentity(entry.descriptor.source, entry.descriptor.provider)))].map(source => ({ path: source, scope: 'project', note: 'pm-evidence source identity relative to caller-selected root' })).filter(file => !owned.has(sourceArtifactKey(file)));
     Object.assign(document.metadata, { evidence_state: JSON.stringify(value), ...(files.length > 0 ? { files: [...document.metadata.files ?? [], ...dedupeLinkedArtifacts(files)] } : {}), comments: [...document.metadata.comments ?? [], { text: parseAnnotationTextInput(observation), author, created_at: nowIso() }] });
     return ['evidence_state', 'comments', ...(files.length > 0 ? ['files'] : [])];
 }

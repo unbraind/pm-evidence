@@ -1,0 +1,36 @@
+id: pm-evidence-canonical-source-paths
+title: Match canonical source paths in affected changed filters
+description: "Fix issue #40: normalize built-in source paths across citation writes, legacy comparisons and invocation read keys; preserve source confinement and explicit refusals."
+type: Issue
+status: in_progress
+priority: 2
+tags[3]: bug,"gh:unbraind/pm-evidence#40",paths
+created_at: "2026-11-06T11:28:15.691Z"
+updated_at: "2026-11-06T13:07:30.547Z"
+author: codex-sol
+comments[8]{created_at,author,text}:
+  "2026-11-06T11:28:32.071Z",codex-sol,"Confirmed literal pre-read filtering drops equivalent legacy descriptors. Plan: one provider-aware lexical path normalizer for built-in file/JSON citation identity, comparisons and read keys; retain custom-provider identity policy and realpath/descriptor confinement. Test spelling classes, legacy records, dependency paths, cache coalescing, typed invalid operands and symlink confinement using real no-git trackers, then behavioral reverts in a disposable copy."
+  "2026-11-06T11:34:31.115Z",codex-sol,"Implemented provider-aware lexical canonicalization and legacy comparison normalization; invocation caches and native source-link comparisons share it. Built-in JSON follows the same path policy; custom providers retain their prior identity contract. Added fourteen regression cases across source and built SDK, including dependencies, canonical cache coalescing, inside/outside symlinks and invalid-operand refusal. First focused run found a fixture-only optional note mismatch; corrected the assertion to use native SDK read-back as its oracle."
+  "2026-11-06T11:43:55.600Z",codex-sol,"Validation: built/source spelling regressions 14/14 and pinned PM linked run 14/14 pass; existing evidence/CLI/selector suites 18/18 pass. Build, lint, typecheck, duplication (0 percent), and docstring gates pass. Behavioral reverts in a disposable source copy rebuild the SDK each time: sourceIdentity fails 13 cases; affected fails all 7 spelling cases; prepare, snapshot and Verification.read each fail the custom-provider case; writeEvidence fails the native ownership case. Every restored selection passes. Command: node test/source-paths-revert.acceptance.ts. Full release gates are delegated to CI as specified in the issue task."
+  "2026-11-06T11:44:59.167Z",codex-sol,"Local strict health: history, integrity, storage, locks and merge-driver requirements pass; the only failure is the managed pm-github extension host receipt version skew (2026.11.4 versus 2026.11.5), tracked separately as pm-evidence-local-extension-skew. No dependency pin or extension configuration was changed for this fix. Fresh CI health remains authoritative for the committed tree."
+  "2026-11-06T12:42:58.536Z",codex-sol,"Final compatibility audit reproduced a regression in the new root-identity guard: released adapters could cite the root identifier dot, but the new lexical normalizer refused it. Added a must-allow regression covering trusted built-in overrides and opaque provider identities; the current implementation fails before reading. Preserve canonical dot identities while retaining the stock reader regular-file refusal. This correction stays within issue #40 and will receive a new exact-head CI/review round."
+  "2026-11-06T12:48:40.889Z",codex-sol,"CodeRabbit round 1 on fd1453b: accepted thread PRRT_kwDOVUfUaM60geE4 (revert harness depended on historical Git availability). Replaced Git lookups with exact committed function fixtures, immutable source revision metadata and SHA-256 checks; all proof builds and tests now use a Git-free disposable copy. The review-body scope notice is refused: the owner explicitly requires follow-up items for out-of-scope discoveries, and removing an already committed tracker/history pair would discard audit evidence. The local-extension follow-up is tracker-only and changes no extension configuration or dependency pin."
+  "2026-11-06T12:58:12.173Z",codex-sol,"Root-identity correction validation: focused path/source suites 17/17 pass; pinned PM linked path run 15/15 pass. Lint, typecheck, duplication (0 percent) and docstrings pass. Expanded behavioral controls pass: issue-baseline sourceIdentity fails 14 cases; the initial PR root guard fails its compatibility case; affected fails 7 spelling cases; prepare/snapshot/Verification.read each fail their provider case; writeEvidence fails native ownership. Every restoration passes. Restoring only Git-based baseline lookup in a Git-free proof copy fails before regressions, confirming the portability regression. Exact frozen baseline fixtures match their recorded SHA-256 values. Initial-head CI fd1453b passed all three full release gates (192/192 plus 4/4 install tests each), 100 percent coverage across 24 sources and CodeQL; the corrected head will get fresh CI and review."
+  "2026-11-06T13:07:26.594Z",codex-sol,"Final fixture-based acceptance passes all seven function-only controls inside a Git-free disposable copy, rebuilding the SDK before each negative and restored run. Expected failures: 14 normalizer cases, one root-identity compatibility case, seven affected spelling cases, and one each for prepare/snapshot/read/native source-link ownership; every restoration passes. The Git-lookup-only portability negative control also fails as expected. Integrated the current version-only main release without tracker conflicts; post-integration build, lint, typecheck, zero-duplication and docstrings pass. Local health still reports only the separately tracked ignored extension receipt skew. Releasing this claim before the next exact-head CI/review cycle; item stays in progress for orchestrator closure."
+files[10]{path,scope}:
+  src/citation-schema.ts,project
+  src/evidence.ts,project
+  src/sources.ts,project
+  src/store.ts,project
+  src/verification.ts,project
+  test/evidence.test.ts,project
+  test/fixtures/source-paths-baselines.json,project
+  test/record-law.test.ts,project
+  test/source-paths-revert.acceptance.ts,project
+  test/source-paths.test.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node --test --test-concurrency=2 test/source-paths.test.ts,project,codex-sol,"2026-11-06T11:34:39.031Z",local_mutation,affected-matches-canonical-source-paths
+docs[2]{path,scope}:
+  ARCHITECTURE.md,project
+  README.md,project
+body: "[GitHub issue #40](https://github.com/unbraind/pm-evidence/issues/40)"

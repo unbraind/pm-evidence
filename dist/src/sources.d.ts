@@ -1,7 +1,7 @@
 import type { FileHandle } from 'node:fs/promises';
 import type { EvidenceOptions, ReadContext, SourceAdapter, SourceSnapshot } from './types.ts';
-/** Reject source identities that could escape or disclose the selected source root. */
-export declare function sourceIdentity(source: string): string;
+/** Canonicalize built-in lexical paths; custom providers retain their existing identity contract. */
+export declare function sourceIdentity(source: string, provider?: string): string;
 /** Optional filesystem lifecycle barriers for deterministic real-source race acceptance tests. */
 export interface SourceReadBarriers {
     afterCanonical?: () => Promise<void>;

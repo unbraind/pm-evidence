@@ -45,7 +45,7 @@ test('heading identity changes require review; JSON pointers use RFC 6901 escapi
 
 test('path, symlink, permissions, size, unknown providers and hostile source text', async t => {
   const f = await tracker(t); const file = join(f.root, 'source.md'); await writeFile(file, text);
-  for (const source of ['../outside', join(f.root, 'source.md'), 'C:\\secret', 'bad\u001bname', 'bad\u009bname', 'a/../source.md']) await assert.rejects(cite(f.item, source, { ...f.options, selector: lines }), EvidenceError);
+  for (const source of ['../outside', join(f.root, 'source.md'), 'C:\\secret', 'bad\u001bname', 'bad\u009bname', 'a/../../source.md']) await assert.rejects(cite(f.item, source, { ...f.options, selector: lines }), EvidenceError);
   const outside = join(f.root, '..', 'outside-evidence-source'); await writeFile(outside, text); t.after(() => unlink(outside));
   await symlink(outside, join(f.root, 'escape')); await assert.rejects(cite(f.item, 'escape', { ...f.options, selector: lines }), /escapes/);
   await symlink(file, join(f.root, 'inside')); await cite(f.item, 'inside', { ...f.options, selector: lines });

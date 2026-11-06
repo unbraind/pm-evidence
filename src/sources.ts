@@ -1,14 +1,20 @@
 import { constants } from 'node:fs';
 import { open, readlink, realpath, stat } from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { isAbsolute, posix, relative, resolve, sep } from 'node:path';
 import { EvidenceError, digest, requireInput } from './core.ts';
 import type { EvidenceOptions, ReadContext, SourceAdapter, SourceSnapshot } from './types.ts';
 
-/** Reject source identities that could escape or disclose the selected source root. */
-export function sourceIdentity(source: string): string {
-  requireInput(source.length > 0 && !isAbsolute(source) && !source.includes('\\') && !source.split('/').includes('..') && !/[\u0000-\u001f\u007f-\u009f]/.test(source) && !/^[a-z]:/i.test(source), 'Source must be a root-relative path without traversal');
-  return source.replace(/^\.\//, '');
+/** Canonicalize built-in lexical paths; custom providers retain their existing identity contract. */
+export function sourceIdentity(source: string, provider = 'file'): string {
+  requireInput(typeof source === 'string' && source.length > 0 && !isAbsolute(source) && !source.includes('\\') && !/[\u0000-\u001f\u007f-\u009f]/.test(source) && !/^[a-z]:/i.test(source), 'Source must be a root-relative path without traversal');
+  if (provider !== 'file' && provider !== 'json') {
+    requireInput(!source.split('/').includes('..'), 'Custom source identities cannot contain traversal');
+    return source.replace(/^\.\//, '');
+  }
+  const identity = posix.normalize(source).replace(/\/$/, '');
+  requireInput(identity !== '..' && !identity.startsWith('../') && !/^[a-z]:/i.test(identity), 'Source must name a path inside the selected root');
+  return identity;
 }
 /** Require a canonical path to stay inside the caller's canonical root. */
 function inside(root: string, path: string): void { const rel = relative(root, path); if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new EvidenceError('boundary', 'Source escapes the selected root', 'Choose a source inside --root and remove escaping symlinks'); }
@@ -66,7 +72,7 @@ export async function snapshot(provider: string, source: string, options: Eviden
   const timeout = new Promise<never>((_resolve, reject) => { timer = setTimeout(() => { controller.abort(); reject(new EvidenceError('timeout', 'Source read deadline exceeded', 'Retry with an available bounded source')); }, timeoutMs); });
   const read = async (): Promise<SourceSnapshot> => {
     signal.throwIfAborted();
-    const result = await Promise.race([adapter.read(sourceIdentity(source), { root: options.root ?? '.', maxBytes, signal }), timeout]);
+    const result = await Promise.race([adapter.read(sourceIdentity(source, provider), { root: options.root ?? '.', maxBytes, signal }), timeout]);
     signal.throwIfAborted();
     requireInput(typeof result === 'object' && result !== null && typeof result.text === 'string' && Buffer.byteLength(result.text) <= maxBytes && result.revision === digest(result.text), 'Adapter must return one size-bounded content digest revision');
     return Object.freeze({ text: result.text, revision: result.revision });

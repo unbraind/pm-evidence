@@ -6,6 +6,10 @@
 
 - Update the toolchain and render empty daily changelog windows ([pm-evidence-toolchain-1104](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/chores/pm-evidence-toolchain-1104.toon))
 
+### Fixed
+
+- Match canonical source paths in affected changed filters ([pm-evidence-canonical-source-paths](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-canonical-source-paths.toon))
+
 ## 2026.11.3 - 2026-11-03
 
 No changes.
