@@ -1,6 +1,6 @@
 import type { FileHandle } from 'node:fs/promises';
 import type { EvidenceOptions, ReadContext, SourceAdapter, SourceSnapshot } from './types.ts';
-/** Canonicalize built-in lexical paths; custom providers retain their existing identity contract. */
+/** Canonicalize built-in lexical paths and custom leading dot prefixes, preserving opaque suffixes. */
 export declare function sourceIdentity(source: string, provider?: string): string;
 /** Optional filesystem lifecycle barriers for deterministic real-source race acceptance tests. */
 export interface SourceReadBarriers {
