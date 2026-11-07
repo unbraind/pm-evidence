@@ -4,7 +4,7 @@ import { digest, EvidenceError, inert, packet, requireInput } from './core.js';
 import { anchor, resolveFragment, select } from './selectors.js';
 import { snapshot, sourceIdentity } from './sources.js';
 import { citationById, Store } from './store.js';
-import { Verification, verificationInput } from './verification.js';
+import { Verification, verificationInput, changedSourceFilter } from './verification.js';
 /** Build a source-bound citation without reading or rewriting the native item schema. */
 async function prepare(item, source, options, author, sourceSnapshot, sectionScoped = false) {
     const selector = parseSelector(options.selector);
@@ -175,18 +175,7 @@ export async function affected(options) {
     verificationInput([], options);
     const verification = new Verification(options);
     const settings = verification.options;
-    // Include supplied custom adapters' identity domain without relaxing the built-in-only boundary.
-    for (const source of settings.changed ?? []) {
-        try {
-            sourceIdentity(source);
-        }
-        catch (error) {
-            if (!settings.adapters?.some(adapter => adapter.provider !== 'file' && adapter.provider !== 'json'))
-                throw error;
-            sourceIdentity(source, 'opaque');
-        }
-    }
-    const changedPaths = new Map();
+    const changedSources = settings.changed === undefined ? undefined : changedSourceFilter(settings.changed, settings.adapters);
     const store = new Store(settings);
     const items = await store.all();
     const native = RelationshipGraph.fromItems(items);
@@ -200,15 +189,11 @@ export async function affected(options) {
     for (const item of items) {
         const seen = new Set();
         for (const [index, citation] of (verificationState(item.evidence_state, verification)?.citations ?? []).entries()) {
-            if (settings.changed !== undefined) {
+            if (changedSources !== undefined) {
                 const parsed = citationSchema.safeParse(citation);
                 if (parsed.success && parsed.data.provenance.item === item.id && !seen.has(parsed.data.id)) {
                     const { provider, source } = parsed.data.descriptor;
-                    let changed = changedPaths.get(provider);
-                    if (changed === undefined) {
-                        changed = new Set(settings.changed.map(operand => sourceIdentity(operand, provider)));
-                        changedPaths.set(provider, changed);
-                    }
+                    const changed = provider === 'file' || provider === 'json' ? changedSources.builtin : changedSources.custom;
                     if (!changed.has(sourceIdentity(source, provider))) {
                         seen.add(parsed.data.id);
                         continue;
@@ -233,7 +218,7 @@ export async function affected(options) {
             }
         }
     }
-    return packet(rows, { items: items.length, citations: checked, depth, changed: settings.changed, traversalLimit: limit }, settings.budget, sourceComplete && !verification.canceled() && verification.receipt.foreignItems === 0, verification.finish());
+    return packet(rows, { items: items.length, citations: checked, depth, changed: settings.changed, ...(changedSources?.customOnlyChanged.length ? { customOnlyChanged: changedSources.customOnlyChanged } : {}), ...(changedSources?.builtinOnlyChanged.length ? { builtinOnlyChanged: changedSources.builtinOnlyChanged } : {}), traversalLimit: limit }, settings.budget, sourceComplete && !verification.canceled() && verification.receipt.foreignItems === 0, verification.finish());
 }
 /** Re-anchor one coherent current snapshot, using exact recovery or an explicit replacement selector. */
 async function reanchor(item, original, options, author) {

@@ -4,7 +4,7 @@ import { digest, EvidenceError, inert, packet, requireInput } from './core.ts';
 import { anchor, resolveFragment, select } from './selectors.ts';
 import { snapshot, sourceIdentity } from './sources.ts';
 import { citationById, Store } from './store.ts';
-import { Verification, verificationInput } from './verification.ts';
+import { Verification, verificationInput, changedSourceFilter } from './verification.ts';
 import type { AffectedOptions, CheckOptions, CheckRow, Citation, CiteOptions, EvidenceOptions, Impact, ReviewOptions, Resolution, SourceSnapshot, Selector, Descriptor, Observation } from './types.ts';
 
 /** Build a source-bound citation without reading or rewriting the native item schema. */
@@ -101,12 +101,7 @@ function verificationState(raw: unknown, verification: Verification) {
 /** Traverse SDK relationships from changed evidence with explicit depth and output receipts. */
 export async function affected(options: AffectedOptions) {
   verificationInput([], options); const verification = new Verification(options); const settings = verification.options;
-  // Include supplied custom adapters' identity domain without relaxing the built-in-only boundary.
-  for (const source of settings.changed ?? []) {
-    try { sourceIdentity(source); }
-    catch (error) { if (!settings.adapters?.some(adapter => adapter.provider !== 'file' && adapter.provider !== 'json')) throw error; sourceIdentity(source, 'opaque'); }
-  }
-  const changedPaths = new Map<string, Set<string>>();
+  const changedSources = settings.changed === undefined ? undefined : changedSourceFilter(settings.changed, settings.adapters);
   const store = new Store(settings); const items = await store.all(); const native = RelationshipGraph.fromItems(items); const graph = new RelationshipGraph(native.nodes(), native.edges().map(edge => edge.kind === 'parent' ? { ...edge, source: edge.target, target: edge.source } : edge)); const rows: Impact[] = []; let sourceComplete = true;
   const depth = settings.depth ?? 2; const limit = settings.limit ?? 100;
   let checked = 0;
@@ -114,12 +109,11 @@ export async function affected(options: AffectedOptions) {
   for (const item of items) {
     const seen = new Set<string>();
     for (const [index, citation] of (verificationState(item.evidence_state, verification)?.citations ?? []).entries()) {
-      if (settings.changed !== undefined) {
+      if (changedSources !== undefined) {
         const parsed = citationSchema.safeParse(citation);
         if (parsed.success && parsed.data.provenance.item === item.id && !seen.has(parsed.data.id)) {
           const { provider, source } = parsed.data.descriptor;
-          let changed = changedPaths.get(provider);
-          if (changed === undefined) { changed = new Set(settings.changed!.map(operand => sourceIdentity(operand, provider))); changedPaths.set(provider, changed); }
+          const changed = provider === 'file' || provider === 'json' ? changedSources.builtin : changedSources.custom;
           if (!changed.has(sourceIdentity(source, provider))) { seen.add(parsed.data.id); continue; }
         }
       }
@@ -137,7 +131,7 @@ export async function affected(options: AffectedOptions) {
       }
     }
   }
-  return packet(rows, { items: items.length, citations: checked, depth, changed: settings.changed, traversalLimit: limit }, settings.budget, sourceComplete && !verification.canceled() && verification.receipt.foreignItems === 0, verification.finish());
+  return packet(rows, { items: items.length, citations: checked, depth, changed: settings.changed, ...(changedSources?.customOnlyChanged.length ? { customOnlyChanged: changedSources.customOnlyChanged } : {}), ...(changedSources?.builtinOnlyChanged.length ? { builtinOnlyChanged: changedSources.builtinOnlyChanged } : {}), traversalLimit: limit }, settings.budget, sourceComplete && !verification.canceled() && verification.receipt.foreignItems === 0, verification.finish());
 }
 /** Re-anchor one coherent current snapshot, using exact recovery or an explicit replacement selector. */
 async function reanchor(item: string, original: Citation, options: ReviewOptions, author: string): Promise<Citation> {
