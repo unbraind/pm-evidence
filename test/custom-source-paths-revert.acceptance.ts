@@ -9,12 +9,12 @@ import { withSourceCopy } from './revert-control.ts';
 await withSourceCopy(async (root, repository) => {
   await cp(join(repository, 'tsconfig.json'), join(root, 'tsconfig.json'));
   const path = join(root, 'src/sources.ts'); const fixed = await readFile(path, 'utf8');
-  const reverted = fixed.replace("return source.replace(/^(?:\\.\\/)+/, '') || '.';", "return source.replace(/^\\.\\//, '');");
+  const reverted = fixed.replace(/const identity = source\.replace[^\n]+\n    return[^\n]+;/, "return source.replace(/^\\.\\//, '');");
   assert.notEqual(reverted, fixed);
   const options = { cwd: root, encoding: 'utf8' as const, timeout: 240000, env: { PATH: process.env.PATH, GIT_CEILING_DIRECTORIES: tmpdir() } };
   /** Rebuild both the authored function and the package SDK before each proof run. */
   const build = () => execFileSync(process.execPath, [join(repository, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.json'], options);
-  const args = ['--test', '--test-concurrency=2', '--test-reporter=tap', 'test/custom-source-paths.test.ts'];
+  const args = ['--test', '--test-concurrency=2', '--test-reporter=tap', '--test-name-pattern', 'custom source identity is|custom provider repeated-dot|custom legacy descriptors', 'test/custom-source-paths.test.ts'];
   try {
     await writeFile(path, reverted); build();
     const result = spawnSync(process.execPath, args, options);

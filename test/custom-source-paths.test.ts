@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test, type TestContext } from 'node:test';
 import * as sdk from '../dist/index.js';
-import { affected, check, cite } from '../index.ts';
+import { affected, check, cite, fileAdapter, jsonAdapter } from '../index.ts';
 import { digest } from '../src/core.ts';
 import { sourceIdentity } from '../src/sources.ts';
 import { Store } from '../src/store.ts';
@@ -69,5 +69,49 @@ test('custom legacy descriptors share canonical reads and retain distinct opaque
       assert.equal(filtered.rows.length, 2); assert.deepEqual(calls, [source]);
     }
     assert.deepEqual((await store.get(f.item)).value, before);
+  }
+});
+
+
+test('custom leading slash and drive suffixes stay valid across every source boundary', async t => {
+  const cases = [['.//sample.txt', './/sample.txt'], ['././/sample.txt', './/sample.txt'], ['././C:sample.txt', './C:sample.txt'], ['././//sample.txt', './//sample.txt'], ['././/', './/']];
+  for (const [operand, identity] of cases) {
+    assert.equal(sourceIdentity(operand, 'opaque'), identity);
+    assert.equal(sourceIdentity(identity, 'opaque'), identity);
+  }
+  for (const api of [{ cite, check, affected }, sdk]) {
+    const f = await customTracker(t); const store = new Store(f.options);
+    const ids = new Set<string>();
+    for (const [operand, identity] of cases) {
+      const citation = await api.cite(f.item, operand, { ...f.options, provider: 'opaque', selector: { kind: 'lines', start: 1, end: 1 } });
+      ids.add(citation.citation);
+      assert.equal(f.calls.at(-1), identity);
+      assert.equal((await api.cite(f.item, identity, { ...f.options, provider: 'opaque', selector: { kind: 'lines', start: 1, end: 1 } })).citation, citation.citation);
+    }
+    assert.equal(ids.size, 4);
+    await store.mutate(f.item, value => { value.citations[0].descriptor.source = '././/sample.txt'; return { value: true, observation: 'Legacy leading slash suffix spelling' }; });
+    const before = (await store.get(f.item)).value;
+    f.change(); f.calls.length = 0;
+    const checked = await api.check([], { ...f.options, record: false });
+    assert.equal(checked.rows.length, 4); assert.ok(checked.rows.every(row => row.freshness === 'changed'));
+    assert.equal(checked.receipt.verification?.sourceReads, 4);
+    for (const [operand, identity] of cases) {
+      f.calls.length = 0;
+      const filtered = await api.affected({ ...f.options, changed: [operand] }).catch(() => assert.fail('Accepted custom identity must remain a usable changed operand'));
+      assert.equal(filtered.rows.length, 1); assert.equal(filtered.rows[0].freshness, 'changed');
+      assert.equal(filtered.receipt.complete, true); assert.equal(filtered.receipt.verification?.sourceReads, 1);
+      assert.deepEqual(f.calls, [identity]);
+    }
+    assert.deepEqual((await store.get(f.item)).value, before);
+    for (const operand of ['/sample.txt', 'C:sample.txt', './..//sample.txt']) {
+      const calls = f.calls.length;
+      await assert.rejects(api.cite(f.item, operand, { ...f.options, provider: 'opaque', selector: { kind: 'lines', start: 1, end: 1 } }), { code: 'invalid' });
+      await assert.rejects(api.affected({ ...f.options, changed: [operand] }), { code: 'invalid' });
+      assert.equal(f.calls.length, calls); assert.deepEqual((await store.get(f.item)).value, before);
+    }
+    for (const adapters of [undefined, [], [fileAdapter], [jsonAdapter], [fileAdapter, jsonAdapter]]) {
+      await assert.rejects(api.affected({ ...f.options, adapters, changed: ['./C:sample.txt'] }), { code: 'invalid' });
+      assert.deepEqual((await store.get(f.item)).value, before);
+    }
   }
 });

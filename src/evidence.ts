@@ -18,11 +18,18 @@ async function prepare(item: string, source: string, options: CiteOptions, autho
   const fragmentDigest = digest(selected.text);
   return parseCitation({ id: `ev-${digest(JSON.stringify([item, descriptor, fragmentDigest])).slice(0, 24)}`, descriptor, fragmentDigest, ...(options.retain === true ? { retained: Buffer.from(selected.text).toString('base64') } : {}), provenance: { item, author, at: new Date().toISOString() }, reviews: [] }, item);
 }
+/** Match genuine producer IDs across source canonicalization without adopting foreign identities. */
+function existingCitation(citations: Citation[], candidate: Citation): Citation | undefined {
+  /** Compare descriptor bytes after applying the write-path source normalizer to each side. */
+  const canonicalDescriptor = (entry: Citation) => JSON.stringify({ ...entry.descriptor, source: sourceIdentity(entry.descriptor.source, entry.descriptor.provider) });
+  return citations.find(entry => entry.id === candidate.id) ?? citations.find(entry => entry.id === `ev-${digest(JSON.stringify([entry.provenance.item, entry.descriptor, entry.fragmentDigest])).slice(0, 24)}` && entry.fragmentDigest === candidate.fragmentDigest && canonicalDescriptor(entry) === canonicalDescriptor(candidate));
+}
 /** Record exact evidence on an existing item; retries do not duplicate citations. */
 export async function cite(item: string, source: string, options: CiteOptions) {
   const store = new Store(options); const author = await store.author(); const canonical = (await store.get(item)).item.id; const citation = await prepare(canonical, source, options, author);
-  await store.mutate(canonical, value => { const prior = value.citations.find(entry => entry.id === citation.id); if (prior !== undefined) { if (citation.retained !== undefined && prior.retained === undefined) { prior.retained = citation.retained; return { value: prior, observation: `evidence retain ${prior.id}` }; } return undefined; } value.citations.push(citation); return { value: citation, observation: `evidence cite ${citation.id}` }; });
-  return { item: canonical, citation: citation.id, fragmentDigest: citation.fragmentDigest, revision: citation.descriptor.revision };
+  let citedId = citation.id;
+  await store.mutate(canonical, value => { const prior = existingCitation(value.citations, citation); citedId = prior?.id ?? citation.id; if (prior !== undefined) { if (citation.retained !== undefined && prior.retained === undefined) { prior.retained = citation.retained; return { value: prior, observation: `evidence retain ${prior.id}` }; } return undefined; } value.citations.push(citation); return { value: citation, observation: `evidence cite ${citation.id}` }; });
+  return { item: canonical, citation: citedId, fragmentDigest: citation.fragmentDigest, revision: citation.descriptor.revision };
 }
 /** Verify retained original bytes instead of reconstructing missing history. */
 export function replay(citation: Citation): string {
@@ -94,8 +101,12 @@ function verificationState(raw: unknown, verification: Verification) {
 /** Traverse SDK relationships from changed evidence with explicit depth and output receipts. */
 export async function affected(options: AffectedOptions) {
   verificationInput([], options); const verification = new Verification(options); const settings = verification.options;
-  const paths = settings.changed?.map(source => sourceIdentity(source));
-  const changedPaths = new Map<string, Set<string>>(paths === undefined ? [] : [['file', new Set(paths)], ['json', new Set(paths)]]);
+  // Include supplied custom adapters' identity domain without relaxing the built-in-only boundary.
+  for (const source of settings.changed ?? []) {
+    try { sourceIdentity(source); }
+    catch (error) { if (!settings.adapters?.some(adapter => adapter.provider !== 'file' && adapter.provider !== 'json')) throw error; sourceIdentity(source, 'opaque'); }
+  }
+  const changedPaths = new Map<string, Set<string>>();
   const store = new Store(settings); const items = await store.all(); const native = RelationshipGraph.fromItems(items); const graph = new RelationshipGraph(native.nodes(), native.edges().map(edge => edge.kind === 'parent' ? { ...edge, source: edge.target, target: edge.source } : edge)); const rows: Impact[] = []; let sourceComplete = true;
   const depth = settings.depth ?? 2; const limit = settings.limit ?? 100;
   let checked = 0;
@@ -103,7 +114,7 @@ export async function affected(options: AffectedOptions) {
   for (const item of items) {
     const seen = new Set<string>();
     for (const [index, citation] of (verificationState(item.evidence_state, verification)?.citations ?? []).entries()) {
-      if (paths !== undefined) {
+      if (settings.changed !== undefined) {
         const parsed = citationSchema.safeParse(citation);
         if (parsed.success && parsed.data.provenance.item === item.id && !seen.has(parsed.data.id)) {
           const { provider, source } = parsed.data.descriptor;
@@ -146,10 +157,17 @@ export async function review(item: string, options: ReviewOptions) {
   requireInput(['still-valid', 're-anchored', 'superseded', 'invalid'].includes(options.disposition) && options.reason.trim().length > 0 && !/[\u0000-\u001f\u007f-\u009f]/.test(options.reason), 'Review requires a valid disposition and a plain-text reason');
   const store = new Store(options); const author = await store.author(); const canonical = (await store.get(item)).item.id; const original = citationById((await store.get(canonical)).value.citations, options.citation);
   const replacement = options.disposition === 're-anchored' ? await reanchor(canonical, original, options, author) : undefined;
-  const id = `review-${digest(JSON.stringify([canonical, options.citation, author, options.disposition, options.reason, replacement?.id])).slice(0, 24)}`;
-  const observation: Observation = { id, author, at: new Date().toISOString(), disposition: options.disposition, reason: options.reason, ...(replacement === undefined ? {} : { replacement: replacement.id }) };
-  await store.mutate(canonical, value => { const current = citationById(value.citations, options.citation); if (current.reviews.some(entry => entry.id === id)) return undefined; current.reviews.push(observation); if (replacement !== undefined && !value.citations.some(entry => entry.id === replacement.id)) value.citations.push(replacement); return { value: true, observation: `evidence review ${id} ${options.disposition}` }; }, options.expectedRevision);
-  return { item: canonical, citation: options.citation, observation: id, ...(replacement === undefined ? {} : { replacement: replacement.id }) };
+  let id = ''; let replacementId = replacement?.id;
+  await store.mutate(canonical, value => {
+    const prior = replacement === undefined ? undefined : existingCitation(value.citations, replacement);
+    replacementId = prior?.id ?? replacement?.id;
+    id = `review-${digest(JSON.stringify([canonical, options.citation, author, options.disposition, options.reason, replacementId])).slice(0, 24)}`;
+    const current = citationById(value.citations, options.citation); if (current.reviews.some(entry => entry.id === id)) return undefined;
+    const observation: Observation = { id, author, at: new Date().toISOString(), disposition: options.disposition, reason: options.reason, ...(replacementId === undefined ? {} : { replacement: replacementId }) };
+    current.reviews.push(observation); if (replacement !== undefined && prior === undefined) value.citations.push(replacement);
+    return { value: true, observation: `evidence review ${id} ${options.disposition}` };
+  }, options.expectedRevision);
+  return { item: canonical, citation: options.citation, observation: id, ...(replacementId === undefined ? {} : { replacement: replacementId }) };
 }
 /** Return citation metadata and last checks; anchors and retained bytes stay out of routine output. */
 export async function show(item: string, options: EvidenceOptions) {

@@ -6,20 +6,33 @@ status: in_progress
 priority: 2
 tags[3]: bug,"gh:unbraind/pm-evidence#43",paths
 created_at: "2026-11-06T17:51:06.902Z"
-updated_at: "2026-11-06T17:57:06.160Z"
+updated_at: "2026-11-07T00:30:13.775Z"
+assignee: codex-agent
+claim_principal: codex-agent
 author: codex-sol
-comments[5]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-11-06T17:51:46.198Z",codex-sol,"Read issue #43 in full via REST and inspected origin/main 049dc82. The custom branch of sourceIdentity strips one leading dot slash per call, unlike the idempotent built-in branch. Plan: canonicalize only leading dot prefixes for custom providers, preserve opaque suffixes and legacy persisted records, and verify raw operands, descriptor comparisons and adapter/cache reads through real gitless SDK trackers and the built package."
   "2026-11-06T17:52:23.282Z",codex-sol,"Failing-first proof on unchanged main 049dc82: node --test --test-concurrency=2 test/custom-source-paths.test.ts reports 0 pass, 3 fail. Exact issue reproduction returns no affected row; legacy descriptor filtering also skips changed citations. The fix stays in sourceIdentity: remove all leading dot-slash prefixes in one pass, using a dot for a dot-only root, while preserving the opaque suffix. No stored citation rewrite and no dependency changes."
   "2026-11-06T17:55:45.577Z",codex-sol,"Behavioral revert proof: node --test --test-concurrency=1 test/custom-source-paths-revert.acceptance.ts passed. In a disposable source copy, reverting only the custom sourceIdentity return to PR #42 and rebuilding dist made all 3 regressions fail; restoring the fix and rebuilding made all 3 pass. Linked tests also passed via pm test --run --progress (3/3). Initial duplication gate found repeated fixture setup; extracted one shared custom-tracker fixture and reran the unchanged gate at 0% duplication. Local lint and typecheck passed; full npm and Bun release gates remain CI-owned per task instructions."
   "2026-11-06T17:56:34.702Z",codex-sol,"Final implementation checks: targeted custom and canonical source-path suites passed 18/18; after fixture deduplication, the rebuilt disposable behavioral proof again produced 3 failures on the #42 branch and 3 passes after restoration. Lint, typecheck, docstrings and duplication (0%) passed. The distribution oracle checks committed HEAD too, so it will be rerun after committing the rebuilt artifacts. Full npm/Bun gates run in CI. Implementation is ready for the required queued CodeRabbit review and final-head CI; item remains in progress for orchestrator verification and closure."
   "2026-11-06T17:57:06.160Z",codex-sol,Local pm health additionally reports only extension_host_pm_cli_version_skew between the pinned 2026.11.4 host and ignored managed pm-github metadata at 2026.11.5. The existing pm-evidence-local-extension-skew item already tracks this checkout-only condition; no SDK pin bump or managed-extension change is included. Fresh CI will establish repository tracker health.
-files[3]{path,scope}:
+  "2026-11-07T00:15:23.338Z",codex-agent,"Review round: fetched all review threads and comments; one unresolved thread PRRT_kwDOVUfUaM60sgBw contains two valid findings (legacy retry identity and leading dot/slash identity closure). Latest CodeRabbit review has no Outside diff range findings. Remote PR head is current with main. Reusing only relevant saved-WIP test fixtures; implementing fixes and disposable behavioral revert proofs, then targeted and full npm/Bun gates at unchanged thresholds."
+  "2026-11-07T00:18:43.359Z",codex-agent,"Failing-first proof against the remote PR implementation: six focused tests ran, three existing regressions passed and all three new regressions failed with assertion errors (legacy cite ID, legacy re-anchor replacement ID, leading-slash normalization). Self-review found re-anchor uses the same incompatible identity check, and custom drive-prefixed suffixes also failed the repeated boundary. The fix shares canonical producer-ID matching between cite/re-anchor, retains a safe relative prefix for opaque slash/drive suffixes, and validates changed operands across the supported provider domains before provider-specific filtering."
+  "2026-11-07T00:24:06.461Z",codex-agent,"Focused source/evidence/path suites passed 30/30 after retaining the built-in refusal boundary. Additional self-review found alias-first matching could override an already present exact canonical citation and change recorded re-anchor links; exact ID lookup now precedes compatibility lookup, with a dedicated regression and independent helper-only negative control. Installed a disposable Bun 1.4.4 test runtime because the host default Bun predates the documented Git-consumer minimum. Strict local pm health retains the pre-existing ignored managed-extension skew (pinned host 2026.11.4 versus managed pm-github 2026.11.6); history integrity and drift checks pass. Fresh tracked-only validation will verify repository health independently."
+  "2026-11-07T00:30:13.775Z",codex-agent,"Behavioral revert proof passed via pm test (3/3 linked commands): disposable copies rebuild dist after every function change. Reverting sourceIdentity to PR #42 fails 3 regressions and restoration passes all 3. Independently reverting cite, review, sourceIdentity and affected to the pre-review PR code fails one behavioral regression each; restoring each function passes it. A helper-only alias-first negative control fails the exact-ID-precedence regression and restoration passes it. Every negative control reaches AssertionError rather than a build/setup failure. Refactored shared legacy fixture setup to preserve the unchanged 0% duplication threshold; rerunning final linked tests after that test-only refactor."
+files[8]{path,scope}:
+  src/evidence.ts,project
   src/sources.ts,project
   test/custom-source-paths-revert.acceptance.ts,project
   test/custom-source-paths.test.ts,project
-tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  test/custom-source-retry.test.ts,project
+  test/custom-source-review-revert.acceptance.ts,project
+  test/fixtures/custom-provider-legacy-citation.json,project
+  test/fixtures/custom-source-retry-cite.json,project
+tests[3]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node --test --test-concurrency=2 test/custom-source-paths.test.ts,project,codex-sol,"2026-11-06T17:53:43.474Z",local_mutation,custom-provider-canonical-affected
+  node --test --test-concurrency=2 test/custom-source-paths.test.ts test/custom-source-retry.test.ts test/source-paths.test.ts test/evidence.test.ts,project,codex-agent,"2026-11-07T00:19:24.318Z",local_mutation,custom-provider-canonical-affected
+  node --test --test-concurrency=1 test/custom-source-paths-revert.acceptance.ts test/custom-source-review-revert.acceptance.ts,project,codex-agent,"2026-11-07T00:19:30.008Z",local_mutation,custom-provider-canonical-affected
 docs[1]{path,scope}:
   ARCHITECTURE.md,project
 body: ""
