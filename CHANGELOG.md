@@ -5,6 +5,11 @@
 ### Fixed
 
 - Canonicalize repeated-dot custom provider source identities ([pm-evidence-custom-provider-canonical](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-custom-provider-canonical.toon))
+
+## 2026.11.7 - 2026-11-07
+
+### Fixed
+
 - Match canonical source paths in affected changed filters ([pm-evidence-canonical-source-paths](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-canonical-source-paths.toon))
 
 ## 2026.11.6 - 2026-11-06
