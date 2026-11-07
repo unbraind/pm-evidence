@@ -35,6 +35,26 @@ export function verificationInput(items, options) {
         requireInput(new Set(options.adapters.map(adapter => adapter.provider)).size === options.adapters.length, 'Adapter providers must be unique');
     }
 }
+/** Resolve both changed-source domains before tracker reads; restrictions depend only on supplied adapters. */
+export function changedSourceFilter(changed, adapters = []) {
+    const customConfigured = adapters.some(adapter => adapter.provider !== 'file' && adapter.provider !== 'json');
+    const builtin = new Set();
+    const custom = new Set();
+    const customOnlyChanged = [];
+    const builtinOnlyChanged = [];
+    const required = customConfigured ? custom : builtin;
+    const optional = customConfigured ? builtin : custom;
+    for (const source of changed) {
+        required.add(sourceIdentity(source, customConfigured ? 'opaque' : 'file'));
+        try {
+            optional.add(sourceIdentity(source, customConfigured ? 'file' : 'opaque'));
+        }
+        catch {
+            (customConfigured ? customOnlyChanged : builtinOnlyChanged).push(source);
+        }
+    }
+    return { builtin, custom, customOnlyChanged, builtinOnlyChanged };
+}
 /** Legacy internal list entrypoint delegates to the exact producer schema. */
 export function verificationCitations(citations) { citationListSchema.parse(citations); }
 /** Share successes and refusals for exactly one invocation and one caller-selected authority. */

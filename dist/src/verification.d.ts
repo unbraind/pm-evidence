@@ -1,6 +1,13 @@
-import type { AffectedOptions, SourceSnapshot, VerificationReceipt } from './types.ts';
+import type { AffectedOptions, SourceAdapter, SourceSnapshot, VerificationReceipt } from './types.ts';
 /** One strict boundary schema shared by SDK verification and CLI dispatch, with no coercion. */
 export declare function verificationInput(items: readonly string[], options: AffectedOptions): void;
+/** Resolve both changed-source domains before tracker reads; restrictions depend only on supplied adapters. */
+export declare function changedSourceFilter(changed: readonly string[], adapters?: readonly SourceAdapter[]): {
+    builtin: Set<string>;
+    custom: Set<string>;
+    customOnlyChanged: string[];
+    builtinOnlyChanged: string[];
+};
 /** Legacy internal list entrypoint delegates to the exact producer schema. */
 export declare function verificationCitations(citations: unknown): void;
 /** Share successes and refusals for exactly one invocation and one caller-selected authority. */

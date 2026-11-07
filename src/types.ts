@@ -23,6 +23,6 @@ export interface AffectedOptions extends CheckOptions { changed?: readonly strin
 /** Review retries preserve the original descriptor; re-anchoring creates a separate citation. */
 export interface ReviewOptions extends EvidenceOptions { citation: string; disposition: Disposition; reason: string; expectedRevision?: number; selector?: Selector }
 /** Bounded output always distinguishes enumerated scope from omitted rows. */
-export interface Packet<T> { rows: T[]; scope: { items: number; citations: number; depth?: number; changed?: readonly string[]; traversalLimit?: number }; receipt: { returned: number; omitted: number; complete: boolean; sourceComplete: boolean; estimator: 'ceil(utf8_bytes/4)'; verification?: VerificationReceipt }; estimatedTokens: number }
+export interface Packet<T> { rows: T[]; scope: { items: number; citations: number; depth?: number; changed?: readonly string[]; customOnlyChanged?: readonly string[]; builtinOnlyChanged?: readonly string[]; traversalLimit?: number }; receipt: { returned: number; omitted: number; complete: boolean; sourceComplete: boolean; estimator: 'ceil(utf8_bytes/4)'; verification?: VerificationReceipt }; estimatedTokens: number }
 /** A relationship path explains why a context item requires review. */
 export interface Impact { item: string; type: string; evidenceItem: string; citation: string; resolution: Resolution; freshness: Freshness; path: string[]; code?: EvidenceCode; remedy?: string; citationIndex?: number }

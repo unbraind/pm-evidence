@@ -5,12 +5,13 @@ import { isAbsolute, posix, relative, resolve, sep } from 'node:path';
 import { EvidenceError, digest, requireInput } from './core.ts';
 import type { EvidenceOptions, ReadContext, SourceAdapter, SourceSnapshot } from './types.ts';
 
-/** Canonicalize built-in lexical paths; custom providers retain their existing identity contract. */
+/** Canonicalize built-in lexical paths and custom leading dot prefixes, preserving opaque suffixes. */
 export function sourceIdentity(source: string, provider = 'file'): string {
   requireInput(typeof source === 'string' && source.length > 0 && !isAbsolute(source) && !source.includes('\\') && !/[\u0000-\u001f\u007f-\u009f]/.test(source) && !/^[a-z]:/i.test(source), 'Source must be a root-relative path without traversal');
   if (provider !== 'file' && provider !== 'json') {
     requireInput(!source.split('/').includes('..'), 'Custom source identities cannot contain traversal');
-    return source.replace(/^\.\//, '');
+    const identity = source.replace(/^(?:\.\/)+/, '') || '.';
+    return identity.startsWith('/') || /^[a-z]:/i.test(identity) ? `./${identity}` : identity;
   }
   const identity = posix.normalize(source).replace(/\/$/, '');
   requireInput(identity !== '..' && !identity.startsWith('../') && !/^[a-z]:/i.test(identity), 'Source must name a path inside the selected root');

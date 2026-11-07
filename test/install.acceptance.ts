@@ -41,7 +41,26 @@ for (const artifact of ['packed', 'git']) for (const manager of ['npm', 'bun']) 
   const pm = (args: string[]) => execute(consumer, runner, [...prefix, ...args], hostEnv);
   const exactSource = '{"n":9007199254740993,"__proto__":1e309,"text":"literal\\ntext"}';
   writeFileSync(join(consumer, 'embed.ts'), `import * as sdk from 'pm-evidence';\nimport { check, affected, review, cite, replay, fileAdapter, resolveFragmentText } from 'pm-evidence';\nimport type { Descriptor } from 'pm-evidence';\nfor (const name of ${JSON.stringify(Object.keys(sourceSdk))}) if (!(name in sdk)) throw Error('Missing public export: '+name);\nif (sdk.default.version !== ${JSON.stringify(JSON.parse(readFileSync(join(repository, 'package.json'), 'utf8')).version)}) throw Error('Compiled extension version drift');\nconst workspace = process.env.PM_PATH; if (!workspace) throw Error('Tracker workspace is required');\nconst result = await check(['packed-decision'], { workspace, root: '.', record: false });\nif (result.rows[0].freshness !== 'changed' || [affected,review,cite,replay,fileAdapter.read].some(fn => typeof fn !== 'function')) throw Error('SDK failed');\nconst source = ${JSON.stringify(exactSource)};\nfor (const [pointer, expected] of [['/n','9007199254740993'],['/__proto__','1e309'],['/text',${JSON.stringify('"literal\\ntext"')}],['',source]]) {\nconst descriptor: Descriptor = {provider:'json',source:'data.json',revision:'a'.repeat(64),jsonEncoding:'source-bytes-v1',selector:{kind:'pointer',pointer}};\nif (resolveFragmentText(source,descriptor) !== expected) throw Error('Exact public fragment SDK failed');\n}\nconsole.log('SDK accepted');\n`);
-  execute(consumer, process.execPath, [join(repository, 'node_modules', 'typescript', 'bin', 'tsc'), '--noEmit', '--strict', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', '--target', 'ES2024', '--types', 'node', '--typeRoots', join(repository, 'node_modules', '@types'), 'embed.ts'], hostEnv);
+  writeFileSync(join(consumer, 'changed-operands-contract.ts'), readFileSync(join(repository, 'test/changed-operands-contract.ts'), 'utf8').replace("from '../index.ts'", "from 'pm-evidence'"));
+  writeFileSync(join(consumer, 'citation-reuse-contract.ts'), readFileSync(join(repository, 'test/citation-reuse-contract.ts'), 'utf8').replace("from '../index.ts'", "from 'pm-evidence'"));
+  mkdirSync(join(consumer, 'fixtures'));
+  writeFileSync(join(consumer, 'fixtures/custom-provider-legacy-citation.json'), readFileSync(join(repository, 'test/fixtures/custom-provider-legacy-citation.json')));
+  const contract = `
+import { spawnSync } from 'node:child_process';
+import assert from 'node:assert/strict';
+import { assertChangedOperandContract } from './changed-operands-contract.ts';
+import { assertCitationReuseContract } from './citation-reuse-contract.ts';
+/** Run the installed native host with a fresh tracker and the consumer's own runtime. */
+const contractRun = (root: string, workspace: string, args: string[]) => spawnSync(${JSON.stringify(manager === 'npm' ? process.execPath : 'bun')}, [${JSON.stringify(join(consumer, 'node_modules/.bin/pm'))}, ...args], { cwd: root, env: { ...process.env, PM_PATH: workspace, PM_AUTHOR: 'fixture' }, encoding: 'utf8' });
+const contractCli: Parameters<typeof assertChangedOperandContract>[1] = {
+  setup: async (root, workspace) => { const installed = contractRun(root, workspace, ['package', 'install', ${JSON.stringify(tarball)}]); assert.equal(installed.status, 0, installed.stdout + installed.stderr); },
+  run: (root, workspace, args) => contractRun(root, workspace, ['evidence', ...args]),
+};
+await assertChangedOperandContract(sdk, contractCli);
+await assertCitationReuseContract(sdk, contractCli);
+`;
+  writeFileSync(join(consumer, 'embed.ts'), readFileSync(join(consumer, 'embed.ts'), 'utf8') + contract);
+  execute(consumer, process.execPath, [join(repository, 'node_modules', 'typescript', 'bin', 'tsc'), '--noEmit', '--strict', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', '--target', 'ES2024', '--types', 'node', '--typeRoots', join(repository, 'node_modules', '@types'), '--allowImportingTsExtensions', 'embed.ts'], hostEnv);
   pm(['init', '--prefix', 'packed', '--defaults', '--agent-guidance', 'skip']); pm(['package', 'install', artifact === 'git' ? './node_modules/pm-evidence' : tarball]);
   assert.notEqual(spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: consumer, env: hostEnv }).status, 0);
   for (const name of ['cite', 'check', 'affected', 'review', 'show', 'bind', 'criteria', 'bundle-target', 'bundle-consent', 'bundle-export', 'bundle-import', 'bundle-inspect']) assert.ok(pm(['evidence', '--help']).includes(name));
