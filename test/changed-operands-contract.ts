@@ -15,7 +15,7 @@ interface ContractCli {
   run(root: string, workspace: string, args: string[]): { status: number | null; stdout: string; stderr: string };
 }
 /** Enumerate every ordered subset of four provider/legacy records, including an empty corpus. */
-function corpora(values: number[]): number[][] { return [[], ...values.flatMap(value => corpora(values.filter(other => other !== value)).map(rest => [value, ...rest]))]; }
+export function corpora(values: number[]): number[][] { return [[], ...values.flatMap(value => corpora(values.filter(other => other !== value)).map(rest => [value, ...rest]))]; }
 /** One adversarial contract reused by source, compiled SDK, npm and Bun packed/Git consumers. */
 export async function assertChangedOperandContract(api: Pick<typeof Evidence, 'cite' | 'affected'>, cli: ContractCli): Promise<void> {
   const root = await mkdtemp(join(tmpdir(), 'changed-operands-')); const workspace = join(root, '.agents/pm'); const item = 'evidence-test-decision';

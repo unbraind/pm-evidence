@@ -6,9 +6,11 @@ status: in_progress
 priority: 2
 tags[3]: bug,"gh:unbraind/pm-evidence#43",paths
 created_at: "2026-11-06T17:51:06.902Z"
-updated_at: "2026-11-07T11:39:06.813Z"
+updated_at: "2026-11-07T15:05:01.890Z"
+assignee: codex-agent
+claim_principal: codex-agent
 author: codex-sol
-comments[16]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-11-06T17:51:46.198Z",codex-sol,"Read issue #43 in full via REST and inspected origin/main 049dc82. The custom branch of sourceIdentity strips one leading dot slash per call, unlike the idempotent built-in branch. Plan: canonicalize only leading dot prefixes for custom providers, preserve opaque suffixes and legacy persisted records, and verify raw operands, descriptor comparisons and adapter/cache reads through real gitless SDK trackers and the built package."
   "2026-11-06T17:52:23.282Z",codex-sol,"Failing-first proof on unchanged main 049dc82: node --test --test-concurrency=2 test/custom-source-paths.test.ts reports 0 pass, 3 fail. Exact issue reproduction returns no affected row; legacy descriptor filtering also skips changed citations. The fix stays in sourceIdentity: remove all leading dot-slash prefixes in one pass, using a dot for a dot-only root, while preserving the opaque suffix. No stored citation rewrite and no dependency changes."
   "2026-11-06T17:55:45.577Z",codex-sol,"Behavioral revert proof: node --test --test-concurrency=1 test/custom-source-paths-revert.acceptance.ts passed. In a disposable source copy, reverting only the custom sourceIdentity return to PR #42 and rebuilding dist made all 3 regressions fail; restoring the fix and rebuilding made all 3 pass. Linked tests also passed via pm test --run --progress (3/3). Initial duplication gate found repeated fixture setup; extracted one shared custom-tracker fixture and reran the unchanged gate at 0% duplication. Local lint and typecheck passed; full npm and Bun release gates remain CI-owned per task instructions."
@@ -25,29 +27,112 @@ comments[16]{created_at,author,text}:
   "2026-11-07T10:41:02.597Z",codex-agent,"Targeted packed-consumer validation caught an issue in the newly added secondary tracker setup before the contract ran. Its activation now installs the already captured and integrity-verified archive, rather than installing an external dependency directory as another managed extension. A real bare gitless tracker accepted archive activation with zero blocking health failures. The original packed/Git npm/Bun install paths and all existing assertions remain unchanged; diagnostics now include native stdout as well as stderr. No package runtime code changed during this fixture correction."
   "2026-11-07T10:47:13.514Z",codex-agent,"Expanded packed-consumer verification passed 2/2: node --test --test-concurrency=2 --test-name-pattern \"^packed \" test/install.acceptance.ts, using Node and Bun 1.4.4 with isolated Git/home configuration. Both real installed consumers execute the exact shared 65-corpus contract, including released legacy data, native CLI JSON/TOON, explicit domain scope and durable-history preservation. The secondary tracker uses the captured verified archive. The ordinary consumer typecheck remains strict; allowImportingTsExtensions permits the added runnable TypeScript contract. All pre-existing install assertions remain present. Full release gates are refreshed next at unchanged thresholds, with the original roughly one-hour local-gate bound retained."
   "2026-11-07T11:39:05.787Z",codex-agent,"Re-review final gates at 4b15a9613a05fe1438ff190ce4c02e3319e7c6b9: npm run release:check passed in 3000.211 seconds (50.0 minutes), with 202/202 tests and all 24 intended source files at 100% statements, branches, functions and lines. All four packed/Git npm/npx and Bun/bunx journeys passed the shared 65-corpus contract; the six source/built/installed API variants collectively cover 390 ordered corpus cases. Distribution passed 2/2 (56 committed artifacts, 168 adversarial mutations refused); duplication remained 0%; typecheck, lint, docstrings, identity/privacy, changelog and release attestation passed; production audit found zero vulnerabilities. There were no local timeouts. Bun 1.4.4 consumer acceptance is measured, while a complete second bun run release:check is delegated to CI under the original roughly one-hour combined local gate bound: coverage alone took 2662.682 seconds. Fresh final-head CI remains pending; follow https://github.com/unbraind/pm-evidence/pull/44/checks. The existing ignored local managed-extension version skew remains separately tracked. All findings in this round were valid and fixed; no review-thread reply, resolution, merge or release was performed. Prior completed fixes and saved-WIP cleanup were preserved. No new pm CLI/SDK defect was confirmed; the additional fixture activation uses the supported verified-archive path."
-files[15]{path,scope}:
-  src/evidence.ts,project
-  src/sources.ts,project
-  src/types.ts,project
-  src/verification.ts,project
-  test/changed-operands-contract.ts,project
-  test/changed-operands-revert.acceptance.ts,project
-  test/changed-operands.test.ts,project
-  test/custom-source-paths-revert.acceptance.ts,project
-  test/custom-source-paths.test.ts,project
-  test/custom-source-retry.test.ts,project
-  test/custom-source-review-revert.acceptance.ts,project
-  test/fixtures/changed-operands-affected-before.json,project
-  test/fixtures/custom-provider-legacy-citation.json,project
-  test/fixtures/custom-source-retry-cite.json,project
-  test/install.acceptance.ts,project
-tests[5]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
-  node --test --test-concurrency=2 test/custom-source-paths.test.ts,project,codex-sol,"2026-11-06T17:53:43.474Z",local_mutation,custom-provider-canonical-affected
-  node --test --test-concurrency=2 test/custom-source-paths.test.ts test/custom-source-retry.test.ts test/source-paths.test.ts test/evidence.test.ts,project,codex-agent,"2026-11-07T00:19:24.318Z",local_mutation,custom-provider-canonical-affected
-  node --test --test-concurrency=1 test/custom-source-paths-revert.acceptance.ts test/custom-source-review-revert.acceptance.ts,project,codex-agent,"2026-11-07T00:19:30.008Z",local_mutation,custom-provider-canonical-affected
-  node --test --test-concurrency=2 test/changed-operands.test.ts test/source-paths.test.ts test/custom-source-paths.test.ts test/commands.test.ts test/coalesced.test.ts,project,codex-agent,"2026-11-07T10:28:42.708Z",local_mutation,custom-provider-canonical-affected
-  node --test --test-concurrency=1 test/changed-operands-revert.acceptance.ts,project,codex-agent,"2026-11-07T10:28:44.388Z",local_mutation,custom-provider-canonical-affected
-docs[2]{path,scope}:
-  ARCHITECTURE.md,project
-  README.md,project
+  "2026-11-07T14:40:41.903Z",codex-agent,"Re-review round 2: PRRT_kwDOVUfUaM601ueD is a valid regression-coverage request, not a demonstrated runtime defect. General rule: citation identity and compatibility reuse remain scoped to the owning item and provider; exact IDs take priority, then the first qualifying genuine legacy alias in persisted citation order is reused. The branch was behind the release commit; merged origin/main first and regenerated the conflicting changelog without editing any history stream. Plan: adversarial public-API tests across two owners, colliding provider/source/byte descriptors and alias order, with cite/re-anchor/retention, native JSON/TOON, installed npm/Bun consumers and real gitless trackers. Preserve matching behavior and all prior tests. Function-only mutation controls will prove the existing identity guards and tie policy are necessary; a behavior revert cannot fail for a tests-only coverage addition."
+  "2026-11-07T15:01:02.472Z",codex-agent,"Whole-class audit: searched citation IDs, descriptor/digest comparisons, owner admission and provenance rebinding throughout src and the complete PR diff. cite and re-anchor share existingCitation; Store state validates the canonical owning item before matching; provider remains in both identity generation and descriptor comparison. Other citationById consumers read the validated owned state. Bundle preview and apply share plan/imported and explicitly rebind target ownership, preserving provider identity. No additional runtime defect was demonstrated. Added real gitless public-API coverage with two owners, three colliding providers, all 24 custom-alias orders plus exact-ID cases, byte/history no-op checks, retention upgrades and authorized import recipients. Native CLI JSON/TOON and every packed/Git npm/Bun consumer execute the same contract. Current nonblocking finding is valid coverage work; matching behavior is preserved."
+  "2026-11-07T15:02:13.244Z",codex-agent,"Mutation/revert proof: node --test --test-concurrency=1 test/citation-reuse-controls.acceptance.ts passed 1/1 in 218.157 seconds. Disposable source copies mutate only one function at a time and rebuild dist: prepare without owner identity; prepare without provider identity; existingCitation without provider comparison; existingCitation choosing the last alias; Store state without owner admission; imported without target-owner identity; imported without provider identity. All seven controls fail with a behavioral AssertionError. After restoring every function and rebuilding, the source and built contracts pass 2/2 across the full 24-order matrix and native JSON/TOON checks. This round adds tests and policy documentation only; there is no runtime behavior change whose revert should fail. Existing released legacy fixture IDs are preserved. Typecheck, lint, 128 documented declarations and 0% duplication passed at unchanged thresholds."
+  "2026-11-07T15:05:01.887Z",codex-agent,"Focused validation through pinned pm passed 12/12: node --test --test-concurrency=2 test/citation-reuse.test.ts test/custom-source-retry.test.ts test/changed-operands.test.ts test/bundles.test.ts (156.0 seconds). Prior linked commands were intentionally not rerun. Fresh tracked-only self-host health with isolated home/Git configuration exits zero; one advisory pending-telemetry-queue receipt remains, with no blocking health failure or merge receipt pending. Test-result tracking is disabled by existing project policy, so the measured result is recorded here instead of enabling run records in the package tracker. Next: real packed npm/Bun consumers, then the full Bun launcher release gate; a duplicate full npm launcher run is delegated to CI because the last measured full run consumed 50 minutes and the original combined local-gate budget is about one hour."
+files[20]:
+  - path: src/evidence.ts
+    scope: project
+  - path: src/sources.ts
+    scope: project
+  - path: src/types.ts
+    scope: project
+  - path: src/verification.ts
+    scope: project
+  - path: test/changed-operands-contract.ts
+    scope: project
+  - path: test/changed-operands-revert.acceptance.ts
+    scope: project
+  - path: test/changed-operands.test.ts
+    scope: project
+  - path: test/citation-reuse-contract.ts
+    scope: project
+    note: Cross-owner/provider identity and legacy alias-order regression coverage
+  - path: test/citation-reuse-control.worker.ts
+    scope: project
+    note: Cross-owner/provider identity and legacy alias-order regression coverage
+  - path: test/citation-reuse-controls.acceptance.ts
+    scope: project
+    note: Cross-owner/provider identity and legacy alias-order regression coverage
+  - path: test/citation-reuse.test.ts
+    scope: project
+    note: Cross-owner/provider identity and legacy alias-order regression coverage
+  - path: test/custom-source-paths-revert.acceptance.ts
+    scope: project
+  - path: test/custom-source-paths.test.ts
+    scope: project
+  - path: test/custom-source-retry.test.ts
+    scope: project
+  - path: test/custom-source-review-revert.acceptance.ts
+    scope: project
+  - path: test/fixtures/changed-operands-affected-before.json
+    scope: project
+  - path: test/fixtures/custom-provider-legacy-citation.json
+    scope: project
+  - path: test/fixtures/custom-source-retry-cite.json
+    scope: project
+  - path: test/helpers.ts
+    scope: project
+    note: Shared native gitless contract CLI
+  - path: test/install.acceptance.ts
+    scope: project
+tests[7]:
+  - command: node --test --test-concurrency=2 test/custom-source-paths.test.ts
+    scope: project
+    provenance:
+      author: codex-sol
+      created_at: "2026-11-06T17:53:43.474Z"
+      source_kind: local_mutation
+      source_ref: custom-provider-canonical-affected
+  - command: node --test --test-concurrency=2 test/custom-source-paths.test.ts test/custom-source-retry.test.ts test/source-paths.test.ts test/evidence.test.ts
+    scope: project
+    provenance:
+      author: codex-agent
+      created_at: "2026-11-07T00:19:24.318Z"
+      source_kind: local_mutation
+      source_ref: custom-provider-canonical-affected
+  - command: node --test --test-concurrency=1 test/custom-source-paths-revert.acceptance.ts test/custom-source-review-revert.acceptance.ts
+    scope: project
+    provenance:
+      author: codex-agent
+      created_at: "2026-11-07T00:19:30.008Z"
+      source_kind: local_mutation
+      source_ref: custom-provider-canonical-affected
+  - command: node --test --test-concurrency=2 test/changed-operands.test.ts test/source-paths.test.ts test/custom-source-paths.test.ts test/commands.test.ts test/coalesced.test.ts
+    scope: project
+    provenance:
+      author: codex-agent
+      created_at: "2026-11-07T10:28:42.708Z"
+      source_kind: local_mutation
+      source_ref: custom-provider-canonical-affected
+  - command: node --test --test-concurrency=1 test/changed-operands-revert.acceptance.ts
+    scope: project
+    provenance:
+      author: codex-agent
+      created_at: "2026-11-07T10:28:44.388Z"
+      source_kind: local_mutation
+      source_ref: custom-provider-canonical-affected
+  - command: node --test --test-concurrency=2 test/citation-reuse.test.ts test/custom-source-retry.test.ts test/changed-operands.test.ts test/bundles.test.ts
+    scope: project
+    timeout_seconds: 1200
+    provenance:
+      author: codex-agent
+      created_at: "2026-11-07T14:58:45.456Z"
+      source_kind: local_mutation
+      source_ref: custom-provider-canonical-affected
+  - command: node --test --test-concurrency=1 test/citation-reuse-controls.acceptance.ts
+    scope: project
+    timeout_seconds: 1200
+    provenance:
+      author: codex-agent
+      created_at: "2026-11-07T14:58:46.580Z"
+      source_kind: local_mutation
+      source_ref: custom-provider-canonical-affected
+docs[2]:
+  - path: ARCHITECTURE.md
+    scope: project
+    note: Existing exact-ID and persisted-alias-order policy
+  - path: README.md
+    scope: project
 body: ""
