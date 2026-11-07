@@ -1,0 +1,54 @@
+{
+  "baseline": "049dc82",
+  "unretained": {
+    "id": "ev-33df73b63f586bfdada48961",
+    "descriptor": {
+      "provider": "opaque",
+      "source": "./sample.txt",
+      "revision": "3ad31db96e2f867e0aa90857cc5e58d0cc4b3c18976cefaab80605b9b6797ecd",
+      "selector": {
+        "kind": "lines",
+        "start": 1,
+        "end": 1
+      },
+      "anchor": {
+        "quote": "sample.txt:old",
+        "before": "",
+        "after": ""
+      }
+    },
+    "fragmentDigest": "3ad31db96e2f867e0aa90857cc5e58d0cc4b3c18976cefaab80605b9b6797ecd",
+    "provenance": {
+      "item": "evidence-test-decision",
+      "author": "fixture",
+      "at": "2026-11-06T22:13:52.117Z"
+    },
+    "reviews": []
+  },
+  "retained": {
+    "id": "ev-33df73b63f586bfdada48961",
+    "descriptor": {
+      "provider": "opaque",
+      "source": "./sample.txt",
+      "revision": "3ad31db96e2f867e0aa90857cc5e58d0cc4b3c18976cefaab80605b9b6797ecd",
+      "selector": {
+        "kind": "lines",
+        "start": 1,
+        "end": 1
+      },
+      "anchor": {
+        "quote": "sample.txt:old",
+        "before": "",
+        "after": ""
+      }
+    },
+    "fragmentDigest": "3ad31db96e2f867e0aa90857cc5e58d0cc4b3c18976cefaab80605b9b6797ecd",
+    "retained": "c2FtcGxlLnR4dDpvbGQ=",
+    "provenance": {
+      "item": "evidence-test-decision",
+      "author": "fixture",
+      "at": "2026-11-06T22:13:52.117Z"
+    },
+    "reviews": []
+  }
+}

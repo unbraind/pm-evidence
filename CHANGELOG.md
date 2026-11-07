@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Canonicalize repeated-dot custom provider source identities ([pm-evidence-custom-provider-canonical](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-custom-provider-canonical.toon))
+
 ## 2026.11.7 - 2026-11-07
 
 ### Fixed

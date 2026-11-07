@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+import type { assertChangedOperandContract } from './changed-operands-contract.ts';
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -29,3 +31,9 @@ export async function extension(workspace: string) {
 }
 /** Run a genuine gitless CLI with ancestor git discovery fenced. */
 export function environment(root: string, workspace: string) { return { ...process.env, PM_PATH: workspace, PM_AUTHOR: 'fixture', GIT_CEILING_DIRECTORIES: dirname(root), PATH: root }; }
+
+/** Use the genuine native host and source extension for shared gitless consumer contracts. */
+export const nativeContractCli: Parameters<typeof assertChangedOperandContract>[1] = {
+  setup: async (_root, workspace) => extension(workspace),
+  run: (root, workspace, args) => spawnSync(process.execPath, [join(import.meta.dirname, '../node_modules/.bin/pm'), 'evidence', ...args], { cwd: root, encoding: 'utf8', env: environment(root, workspace) }),
+};

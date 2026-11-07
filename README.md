@@ -203,6 +203,17 @@ fragment left **19 current and 1 lost**. All **415 read-only snapshot files** we
 byte-identical afterward. The 800-token response used **754 estimated tokens**,
 returned 6 rows and disclosed 79 omissions. See [the measurement](docs/real-data.md).
 
+`affected` validates changed operands before reading tracker state or sources. With a
+custom adapter configured, operands must satisfy the custom identity rules; an
+operand such as `nested/../doc.txt` refuses before any source read. A relative
+guarded drive suffix such as `./C:x` is accepted only for custom providers and
+appears in `scope.customOnlyChanged`, so it cannot silently stand in for a
+built-in file path. Without custom adapters, built-in path rules apply;
+`nested/../doc.txt` is allowed and appears in `scope.builtinOnlyChanged` because it
+cannot select custom-provider citations. These restrictions are the same for
+empty and mixed-provider trackers, in every citation order, and are visible in
+both JSON and TOON. Persisted citation descriptors and IDs are preserved.
+
 ## Agent handoff
 
 Add this to a project's AGENTS.md:

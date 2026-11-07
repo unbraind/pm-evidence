@@ -83,6 +83,8 @@ export interface Packet<T> {
         citations: number;
         depth?: number;
         changed?: readonly string[];
+        customOnlyChanged?: readonly string[];
+        builtinOnlyChanged?: readonly string[];
         traversalLimit?: number;
     };
     receipt: {

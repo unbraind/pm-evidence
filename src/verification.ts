@@ -1,7 +1,7 @@
 import { EvidenceError, requireInput } from './core.ts';
 import { citationListSchema, descriptorSchema } from './citation-schema.ts';
 import { snapshot, sourceIdentity } from './sources.ts';
-import type { AffectedOptions, SourceSnapshot, VerificationReceipt } from './types.ts';
+import type { AffectedOptions, SourceAdapter, SourceSnapshot, VerificationReceipt } from './types.ts';
 
 /** Bound all verification arrays and counters before enumeration or source access. */
 const MAX_ENTRIES = 10_000;
@@ -31,6 +31,19 @@ export function verificationInput(items: readonly string[], options: AffectedOpt
     for (const adapter of options.adapters) requireInput(typeof adapter === 'object' && adapter !== null && Object.keys(adapter).every(key => ['provider', 'read'].includes(key)) && descriptorSchema.shape.provider.safeParse(adapter.provider).success && typeof adapter.read === 'function', 'Adapters require only a bounded provider and read function');
     requireInput(new Set(options.adapters.map(adapter => adapter.provider)).size === options.adapters.length, 'Adapter providers must be unique');
   }
+}
+/** Resolve both changed-source domains before tracker reads; restrictions depend only on supplied adapters. */
+export function changedSourceFilter(changed: readonly string[], adapters: readonly SourceAdapter[] = []) {
+  const customConfigured = adapters.some(adapter => adapter.provider !== 'file' && adapter.provider !== 'json');
+  const builtin = new Set<string>(); const custom = new Set<string>();
+  const customOnlyChanged: string[] = []; const builtinOnlyChanged: string[] = [];
+  const required = customConfigured ? custom : builtin; const optional = customConfigured ? builtin : custom;
+  for (const source of changed) {
+    required.add(sourceIdentity(source, customConfigured ? 'opaque' : 'file'));
+    try { optional.add(sourceIdentity(source, customConfigured ? 'file' : 'opaque')); }
+    catch { (customConfigured ? customOnlyChanged : builtinOnlyChanged).push(source); }
+  }
+  return { builtin, custom, customOnlyChanged, builtinOnlyChanged };
 }
 /** Legacy internal list entrypoint delegates to the exact producer schema. */
 export function verificationCitations(citations: unknown): void { citationListSchema.parse(citations); }

@@ -4,7 +4,7 @@ import { digest, EvidenceError, inert, packet, requireInput } from './core.js';
 import { anchor, resolveFragment, select } from './selectors.js';
 import { snapshot, sourceIdentity } from './sources.js';
 import { citationById, Store } from './store.js';
-import { Verification, verificationInput } from './verification.js';
+import { Verification, verificationInput, changedSourceFilter } from './verification.js';
 /** Build a source-bound citation without reading or rewriting the native item schema. */
 async function prepare(item, source, options, author, sourceSnapshot, sectionScoped = false) {
     const selector = parseSelector(options.selector);
@@ -19,20 +19,27 @@ async function prepare(item, source, options, author, sourceSnapshot, sectionSco
     const fragmentDigest = digest(selected.text);
     return parseCitation({ id: `ev-${digest(JSON.stringify([item, descriptor, fragmentDigest])).slice(0, 24)}`, descriptor, fragmentDigest, ...(options.retain === true ? { retained: Buffer.from(selected.text).toString('base64') } : {}), provenance: { item, author, at: new Date().toISOString() }, reviews: [] }, item);
 }
+/** Match genuine producer IDs across source canonicalization without adopting foreign identities. */
+function existingCitation(citations, candidate) {
+    /** Compare descriptor bytes after applying the write-path source normalizer to each side. */
+    const canonicalDescriptor = (entry) => JSON.stringify({ ...entry.descriptor, source: sourceIdentity(entry.descriptor.source, entry.descriptor.provider) });
+    return citations.find(entry => entry.id === candidate.id) ?? citations.find(entry => entry.id === `ev-${digest(JSON.stringify([entry.provenance.item, entry.descriptor, entry.fragmentDigest])).slice(0, 24)}` && entry.fragmentDigest === candidate.fragmentDigest && canonicalDescriptor(entry) === canonicalDescriptor(candidate));
+}
 /** Record exact evidence on an existing item; retries do not duplicate citations. */
 export async function cite(item, source, options) {
     const store = new Store(options);
     const author = await store.author();
     const canonical = (await store.get(item)).item.id;
     const citation = await prepare(canonical, source, options, author);
-    await store.mutate(canonical, value => { const prior = value.citations.find(entry => entry.id === citation.id); if (prior !== undefined) {
+    let citedId = citation.id;
+    await store.mutate(canonical, value => { const prior = existingCitation(value.citations, citation); citedId = prior?.id ?? citation.id; if (prior !== undefined) {
         if (citation.retained !== undefined && prior.retained === undefined) {
             prior.retained = citation.retained;
             return { value: prior, observation: `evidence retain ${prior.id}` };
         }
         return undefined;
     } value.citations.push(citation); return { value: citation, observation: `evidence cite ${citation.id}` }; });
-    return { item: canonical, citation: citation.id, fragmentDigest: citation.fragmentDigest, revision: citation.descriptor.revision };
+    return { item: canonical, citation: citedId, fragmentDigest: citation.fragmentDigest, revision: citation.descriptor.revision };
 }
 /** Verify retained original bytes instead of reconstructing missing history. */
 export function replay(citation) {
@@ -168,8 +175,7 @@ export async function affected(options) {
     verificationInput([], options);
     const verification = new Verification(options);
     const settings = verification.options;
-    const paths = settings.changed?.map(source => sourceIdentity(source));
-    const changedPaths = new Map(paths === undefined ? [] : [['file', new Set(paths)], ['json', new Set(paths)]]);
+    const changedSources = settings.changed === undefined ? undefined : changedSourceFilter(settings.changed, settings.adapters);
     const store = new Store(settings);
     const items = await store.all();
     const native = RelationshipGraph.fromItems(items);
@@ -183,15 +189,11 @@ export async function affected(options) {
     for (const item of items) {
         const seen = new Set();
         for (const [index, citation] of (verificationState(item.evidence_state, verification)?.citations ?? []).entries()) {
-            if (paths !== undefined) {
+            if (changedSources !== undefined) {
                 const parsed = citationSchema.safeParse(citation);
                 if (parsed.success && parsed.data.provenance.item === item.id && !seen.has(parsed.data.id)) {
                     const { provider, source } = parsed.data.descriptor;
-                    let changed = changedPaths.get(provider);
-                    if (changed === undefined) {
-                        changed = new Set(settings.changed.map(operand => sourceIdentity(operand, provider)));
-                        changedPaths.set(provider, changed);
-                    }
+                    const changed = provider === 'file' || provider === 'json' ? changedSources.builtin : changedSources.custom;
                     if (!changed.has(sourceIdentity(source, provider))) {
                         seen.add(parsed.data.id);
                         continue;
@@ -216,7 +218,7 @@ export async function affected(options) {
             }
         }
     }
-    return packet(rows, { items: items.length, citations: checked, depth, changed: settings.changed, traversalLimit: limit }, settings.budget, sourceComplete && !verification.canceled() && verification.receipt.foreignItems === 0, verification.finish());
+    return packet(rows, { items: items.length, citations: checked, depth, changed: settings.changed, ...(changedSources?.customOnlyChanged.length ? { customOnlyChanged: changedSources.customOnlyChanged } : {}), ...(changedSources?.builtinOnlyChanged.length ? { builtinOnlyChanged: changedSources.builtinOnlyChanged } : {}), traversalLimit: limit }, settings.budget, sourceComplete && !verification.canceled() && verification.receipt.foreignItems === 0, verification.finish());
 }
 /** Re-anchor one coherent current snapshot, using exact recovery or an explicit replacement selector. */
 async function reanchor(item, original, options, author) {
@@ -241,12 +243,22 @@ export async function review(item, options) {
     const canonical = (await store.get(item)).item.id;
     const original = citationById((await store.get(canonical)).value.citations, options.citation);
     const replacement = options.disposition === 're-anchored' ? await reanchor(canonical, original, options, author) : undefined;
-    const id = `review-${digest(JSON.stringify([canonical, options.citation, author, options.disposition, options.reason, replacement?.id])).slice(0, 24)}`;
-    const observation = { id, author, at: new Date().toISOString(), disposition: options.disposition, reason: options.reason, ...(replacement === undefined ? {} : { replacement: replacement.id }) };
-    await store.mutate(canonical, value => { const current = citationById(value.citations, options.citation); if (current.reviews.some(entry => entry.id === id))
-        return undefined; current.reviews.push(observation); if (replacement !== undefined && !value.citations.some(entry => entry.id === replacement.id))
-        value.citations.push(replacement); return { value: true, observation: `evidence review ${id} ${options.disposition}` }; }, options.expectedRevision);
-    return { item: canonical, citation: options.citation, observation: id, ...(replacement === undefined ? {} : { replacement: replacement.id }) };
+    let id = '';
+    let replacementId = replacement?.id;
+    await store.mutate(canonical, value => {
+        const prior = replacement === undefined ? undefined : existingCitation(value.citations, replacement);
+        replacementId = prior?.id ?? replacement?.id;
+        id = `review-${digest(JSON.stringify([canonical, options.citation, author, options.disposition, options.reason, replacementId])).slice(0, 24)}`;
+        const current = citationById(value.citations, options.citation);
+        if (current.reviews.some(entry => entry.id === id))
+            return undefined;
+        const observation = { id, author, at: new Date().toISOString(), disposition: options.disposition, reason: options.reason, ...(replacementId === undefined ? {} : { replacement: replacementId }) };
+        current.reviews.push(observation);
+        if (replacement !== undefined && prior === undefined)
+            value.citations.push(replacement);
+        return { value: true, observation: `evidence review ${id} ${options.disposition}` };
+    }, options.expectedRevision);
+    return { item: canonical, citation: options.citation, observation: id, ...(replacementId === undefined ? {} : { replacement: replacementId }) };
 }
 /** Return citation metadata and last checks; anchors and retained bytes stay out of routine output. */
 export async function show(item, options) {
