@@ -11,7 +11,7 @@ import type * as Evidence from '../index.ts';
 interface ContractCli {
   /** Activate the installed extension in this disposable tracker. */
   setup(root: string, workspace: string): Promise<void>;
-  /** Invoke the actual native host without a git executable. */
+  /** Invoke the actual native host for this gitless tracker. */
   run(root: string, workspace: string, args: string[]): { status: number | null; stdout: string; stderr: string };
 }
 /** Enumerate every ordered subset of four provider/legacy records, including an empty corpus. */
