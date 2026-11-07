@@ -51,7 +51,7 @@ import { assertChangedOperandContract } from './changed-operands-contract.ts';
 /** Run the installed native host with a fresh tracker and the consumer's own runtime. */
 const contractRun = (root: string, workspace: string, args: string[]) => spawnSync(${JSON.stringify(manager === 'npm' ? process.execPath : 'bun')}, [${JSON.stringify(join(consumer, 'node_modules/.bin/pm'))}, ...args], { cwd: root, env: { ...process.env, PM_PATH: workspace }, encoding: 'utf8' });
 await assertChangedOperandContract(sdk, {
-  setup: async (root, workspace) => { const installed = contractRun(root, workspace, ['package', 'install', ${JSON.stringify(join(consumer, 'node_modules/pm-evidence'))}]); assert.equal(installed.status, 0, installed.stderr); },
+  setup: async (root, workspace) => { const installed = contractRun(root, workspace, ['package', 'install', ${JSON.stringify(tarball)}]); assert.equal(installed.status, 0, installed.stdout + installed.stderr); },
   run: (root, workspace, args) => contractRun(root, workspace, ['evidence', ...args]),
 });
 `;
