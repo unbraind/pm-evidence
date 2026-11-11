@@ -1,8 +1,11 @@
 # Changelog
 
-## Unreleased
+## 2026.11.11 - 2026-11-11
 
-No changes.
+### Dependencies
+
+- Bump jscpd ([#49](https://github.com/unbraind/pm-evidence/pull/49))
+- Bump the pm-toolchain group with 3 updates ([#47](https://github.com/unbraind/pm-evidence/pull/47))
 
 ## 2026.11.8 - 2026-11-08
 
