@@ -2,11 +2,13 @@ id: pm-evidence-custom-provider-canonical
 title: Canonicalize repeated-dot custom provider source identities
 description: "Regression in PR #42: repeated leading dot operands diverge from stored custom descriptors and affected silently skips changed evidence."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: bug,"gh:unbraind/pm-evidence#43",paths
 created_at: "2026-11-06T17:51:06.902Z"
-updated_at: "2026-11-07T15:33:18.570Z"
+updated_at: "2026-11-14T08:47:15.602Z"
+closed_at: "2026-11-14T08:47:15.450Z"
+completed_at: "2026-11-14T08:47:15.450Z"
 author: codex-sol
 comments[25]{created_at,author,text}:
   "2026-11-06T17:51:46.198Z",codex-sol,"Read issue #43 in full via REST and inspected origin/main 049dc82. The custom branch of sourceIdentity strips one leading dot slash per call, unlike the idempotent built-in branch. Plan: canonicalize only leading dot prefixes for custom providers, preserve opaque suffixes and legacy persisted records, and verify raw operands, descriptor comparisons and adapter/cache reads through real gitless SDK trackers and the built package."
@@ -162,4 +164,5 @@ docs[2]:
     note: Existing exact-ID and persisted-alias-order policy
   - path: README.md
     scope: project
+close_reason: "https://github.com/unbraind/pm-evidence/pull/44 merged 2026-11-07T20:43:19Z; merge SHA bd369689ee4e39540373ff56d43a45d012db4d5d; PR head fe17f6e9f109c594f723778c780ceea4dad97d93. Delivered: Canonical repeated-dot custom-provider identities across writes and affected filters, with confinement, compatibility and installed consumer regression evidence. Green at that head: test (22), codeql, test (26), CodeQL, CodeRabbit. Other check outcomes: enable-auto-merge: SKIPPED; cubic · AI code reviewer: NEUTRAL; Sourcery review: SKIPPED (not counted as green)."
 body: ""

@@ -2,11 +2,13 @@ id: pm-evidence-canonical-source-paths
 title: Match canonical source paths in affected changed filters
 description: "Fix issue #40: normalize built-in source paths across citation writes, legacy comparisons and invocation read keys; preserve source confinement and explicit refusals."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: bug,"gh:unbraind/pm-evidence#40",paths
 created_at: "2026-11-06T11:28:15.691Z"
-updated_at: "2026-11-06T13:07:30.547Z"
+updated_at: "2026-11-14T08:47:19.179Z"
+closed_at: "2026-11-14T08:47:19.127Z"
+completed_at: "2026-11-14T08:47:19.127Z"
 author: codex-sol
 comments[8]{created_at,author,text}:
   "2026-11-06T11:28:32.071Z",codex-sol,"Confirmed literal pre-read filtering drops equivalent legacy descriptors. Plan: one provider-aware lexical path normalizer for built-in file/JSON citation identity, comparisons and read keys; retain custom-provider identity policy and realpath/descriptor confinement. Test spelling classes, legacy records, dependency paths, cache coalescing, typed invalid operands and symlink confinement using real no-git trackers, then behavioral reverts in a disposable copy."
@@ -33,4 +35,5 @@ tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
 docs[2]{path,scope}:
   ARCHITECTURE.md,project
   README.md,project
+close_reason: "https://github.com/unbraind/pm-evidence/pull/42 merged 2026-11-06T14:20:04Z; merge SHA 049dc82bdb0edfa259ffd6c8454cd9104d4b3f29; PR head a1324372e67e84d61cda01a35e6ccbb4e6b7ff63. Delivered: Canonical built-in source paths across citation writes, legacy comparisons and affected changed filters, preserving confinement and compatible root identities. Green at that head: test (22), codeql, test (26), CodeQL, CodeRabbit, cubic · AI code reviewer. Other check outcomes: enable-auto-merge: SKIPPED; Sourcery review: SKIPPED (not counted as green)."
 body: "[GitHub issue #40](https://github.com/unbraind/pm-evidence/issues/40)"
