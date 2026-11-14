@@ -2,19 +2,23 @@ id: pm-evidence-toolchain-1104
 title: Update the toolchain and render empty daily changelog windows
 description: "Reproduce and classify dependency-candidate failures, update the pm toolchain and preserve full assertions: https://github.com/unbraind/pm-evidence/pull/36"
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[4]: dependencies,"gh:unbraind/pm-evidence#36",migration,sdk
 created_at: "2026-11-04T19:08:26.085Z"
-updated_at: "2026-11-04T22:27:10.036Z"
+updated_at: "2026-11-14T10:02:42.843Z"
+closed_at: "2026-11-14T08:47:23.343Z"
+completed_at: "2026-11-04T23:09:49.000Z"
 author: codex-toolchain-1104
 acceptance_criteria: "Use exact newest pins; fix verified contract failures; run focused regression, coverage, typecheck and lint; retain all thresholds."
-comments[5]{created_at,author,text}:
+release: 2026.11.6
+comments[6]{created_at,author,text}:
   "2026-11-04T19:12:14.988Z",codex-toolchain-1104,"SDK adoption regressions pass 5/5 on SDK 2026.11.4. Confirmed changelog:check fails MISSING_REQUESTED_RELEASE for 2026.11.3. Root cause: pm-changelog 2026.10.31 GH-302 requires requested release visibility; the daily release has no qualifying entries (generated-release contract). Explicitly include empty release windows in scripts/workflow and regenerate history; retain the existing status selection and all coverage thresholds. No production workaround identified."
   "2026-11-04T19:17:14.357Z",codex-toolchain-1104,"Focused SDK adoption tests passed 5/5 via pm test. Typecheck, lint and zero-duplication gates passed; regenerated changelog passes. Full unchanged-threshold coverage remains queued behind earlier packages and the shared-host suite. No SDK runtime failure or upstream regression has been demonstrated by these checks."
   "2026-11-04T21:49:20.628Z",codex-toolchain-1104,"Scope clarification: this package has no inline workflow generator call, so the empty-window policy changes only the four package.json generator scripts and regenerated CHANGELOG.md; no release workflow change is needed. Existing tracker status selection and source coverage thresholds are preserved. Full coverage is running serially after the earlier package gates."
   "2026-11-04T22:08:52.325Z",codex-toolchain-1104,"Full coverage timed out after 2400 seconds and produced no valid final coverage result. The captured output also marks the schema-derived boundary case as failed before interruption; its assertion details were not emitted before the suite was killed. The 500-sequence criterion model passed all 1500 operations, but this is not a full-suite pass. Reproduce only the boundary case with TAP output to distinguish a worker timeout from a contract assertion before classifying the remaining blocker."
   "2026-11-04T22:27:08.659Z",codex-toolchain-1104,"Final verification: focused SDK adoption passes 5/5. The isolated unchanged schema-boundary case passes 1/1 with all 285 derived cases (147 accepted, 138 refused) and supplemental pointer, containment, identity, density, ordering and huge-array checks; worker limits remain unchanged. Full coverage timed out at 2400 seconds and its boundary-case failure did not reproduce without coverage instrumentation. No final full-suite count or valid coverage claim is available. Remaining blocker: diagnose the coverage-only failure and complete the unchanged gate; no causal SDK regression has been established, so no production workaround or threshold reduction is applied. Typecheck, test compilation, lint, zero duplication, build, docstrings, production audit, identity checks, strict health, changelog generation/check, publish-attestation verification and pack dry-run pass. Push the verified GH-302 empty-window policy within the package budget and leave this item in progress for orchestrator verification."
+  "2026-11-14T10:02:42.839Z",codex-sweep-1114,"Release-attribution correction: completed_at = 2026-11-04T23:09:49Z from https://github.com/unbraind/pm-evidence/pull/36 (merge SHA 3cd01828d57141fedee19191033d59bb3bf363ed); first containing release tag v2026.11.06, recorded release 2026.11.6."
 files[2]{path,scope}:
   package-lock.json,project
   package.json,project
@@ -24,4 +28,5 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   "nice -n 10 node --test --test-reporter=tap --test-name-pattern=\"every schema boundary\" test/record-law.test.ts",project,1200,codex-toolchain-1104,"2026-11-04T22:08:53.448Z",local_mutation,dependabot/npm_and_yarn/pm-toolchain-3b0ff5633e
 docs[1]{path,scope}:
   CHANGELOG.md,project
+close_reason: "https://github.com/unbraind/pm-evidence/pull/36 merged 2026-11-04T23:09:49Z; merge SHA 3cd01828d57141fedee19191033d59bb3bf363ed; PR head a6a514e256f6571994a2a8e2b171464ab550dd70. Delivered: Pinned toolchain update and explicit empty daily changelog window rendering with unchanged assertions and coverage thresholds. Green at that head: test (22), codeql, enable-auto-merge, test (26), CodeQL. Other check outcomes: CodeRabbit: SKIPPED; Sourcery review: SKIPPED (not counted as green)."
 body: ""
