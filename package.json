@@ -49,7 +49,8 @@
     "merge:install": "pm merge install",
     "coverage": "npm run build && npm run build:test && node scripts/coverage-gate.ts",
     "verify:release-publish-attestation": "node scripts/verify-release-publish-attestation.ts",
-    "identity:check": "node scripts/identity-gate.ts"
+    "identity:check": "node scripts/identity-gate.ts",
+    "release:build": "npm run build && git add -- package.json package-lock.json manifest.json index.ts src dist && (git diff --cached --quiet || git -c user.name='github-actions[bot]' -c user.email=41898282+github-actions[bot]@users.noreply.github.com commit -m 'Prepare release distribution')"
   },
   "peerDependencies": {
     "@unbrained/pm-cli": ">=2026.10.23"
@@ -64,7 +65,7 @@
     "fast-glob": "3.3.3",
     "jscpd": "5.4.3",
     "pm-changelog": "2026.11.5",
-    "pm-ops": "2026.11.5",
+    "pm-ops": "2026.11.14",
     "typescript": "7.0.2",
     "yaml": "2.9.1"
   },
