@@ -2,15 +2,6 @@
 
 ## Unreleased
 
-### Changed
-
-- Update the toolchain and render empty daily changelog windows ([pm-evidence-toolchain-1104](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/chores/pm-evidence-toolchain-1104.toon))
-
-### Fixed
-
-- Match canonical source paths in affected changed filters ([pm-evidence-canonical-source-paths](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-canonical-source-paths.toon))
-- Canonicalize repeated-dot custom provider source identities ([pm-evidence-custom-provider-canonical](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-custom-provider-canonical.toon))
-
 ### Other
 
 - Close delivered pm items and reserve in progress for active work (2026-10-24) ([pm-evidence-254g](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/chores/pm-evidence-254g.toon))
@@ -24,19 +15,21 @@
 
 ## 2026.11.8 - 2026-11-08
 
-No changes.
+### Fixed
+
+- Canonicalize repeated-dot custom provider source identities ([pm-evidence-custom-provider-canonical](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-custom-provider-canonical.toon))
 
 ## 2026.11.7 - 2026-11-07
 
-No changes.
+### Fixed
+
+- Match canonical source paths in affected changed filters ([pm-evidence-canonical-source-paths](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-canonical-source-paths.toon))
 
 ## 2026.11.6 - 2026-11-06
 
-### Dependencies
+### Changed
 
-- Bump unbraind/pm-github/.github/workflows/pm-github-sync.yml ([#39](https://github.com/unbraind/pm-evidence/pull/39))
-- Bump the codeql-action group with 2 updates ([#38](https://github.com/unbraind/pm-evidence/pull/38))
-- Bump the pm-toolchain group with 3 updates ([#36](https://github.com/unbraind/pm-evidence/pull/36))
+- Update the toolchain and render empty daily changelog windows ([pm-evidence-toolchain-1104](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/chores/pm-evidence-toolchain-1104.toon))
 
 ## 2026.11.3 - 2026-11-03
 
