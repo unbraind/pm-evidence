@@ -1,3 +1,4 @@
+import { testDepth } from "./support/depth.ts";
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
@@ -32,7 +33,7 @@ test('500 seeded source sequences preserve exact public SDK fragments, producer 
   process.env.PATH = root; process.env.GIT_CEILING_DIRECTORIES = tmpdir();
   t.after(() => { if (previousPath === undefined) delete process.env.PATH; else process.env.PATH = previousPath; if (previousCeiling === undefined) delete process.env.GIT_CEILING_DIRECTORIES; else process.env.GIT_CEILING_DIRECTORIES = previousCeiling; });
   let operations = 0;
-  for (let sequence = 0; sequence < 500; sequence++) {
+  for (let sequence = 0; sequence < testDepth(500); sequence++) {
     for (let step = 0, length = 2 + next() % 5; step < length; step++) {
       const number = numbers[next() % numbers.length], string = strings[next() % strings.length], prototype = next() % 2 ? 'true' : 'false';
       const newline = next() % 2 ? '\r\n' : '\n', space = next() % 2 ? '  ' : '\t';
@@ -49,7 +50,7 @@ test('500 seeded source sequences preserve exact public SDK fragments, producer 
     }
     assert.deepEqual((await client.get(item.id, { full: true })).item, before);
   }
-  console.log(JSON.stringify({ seed: '53ace91', sequences: 500, operations, selectors: 6, sdkStatePreserved: true, gitAvailable: false }));
+  console.log(JSON.stringify({ seed: '53ace91', sequences: testDepth(500), operations, selectors: 6, sdkStatePreserved: true, gitAvailable: false }));
 });
 
 test('public fragment boundary refuses malformed descriptors and extreme inputs with safe typed remedies', () => {

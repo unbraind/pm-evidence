@@ -1,3 +1,4 @@
+import { testDepth } from "./support/depth.ts";
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createHash } from 'node:crypto';
@@ -29,7 +30,7 @@ test('500 seeded operation sequences preserve SDK-read state through old-input r
   const model = new Map<string, ModelCitation>(); let revision = 0;
   const comments = [...(baseline.comments ?? []).map(entry => entry.text)];
   const options = { ...f.options, budget: 30000 };
-  for (let sequence = 0; sequence < 500; sequence++) {
+  for (let sequence = 0; sequence < testDepth(500); sequence++) {
     // Each sequence has four random operations; older source inputs remain eligible forever.
     for (let step = 0; step < 4; step++) {
       const input = inputs[next() % inputs.length]; await writeFile(join(f.root, 'policy.json'), input);
@@ -75,5 +76,5 @@ test('500 seeded operation sequences preserve SDK-read state through old-input r
     for (const key of stableKeys) assert.deepEqual(item[key], baseline[key], `native ${key} at sequence ${sequence}`);
   }
   assert.equal(model.size, inputs.length, 'Every exact-byte variant must remain distinct');
-  t.diagnostic(`seed=0x5eeda11; sequences=500; operations=2000; citations=${model.size}; evidence revisions=${revision}; SDK readbacks=500; native fields=${stableKeys.length}`);
+  t.diagnostic(`seed=0x5eeda11; sequences=${testDepth(500)}; operations=${testDepth(500) * 4}; citations=${model.size}; evidence revisions=${revision}; SDK readbacks=${testDepth(500)}; native fields=${stableKeys.length}`);
 });

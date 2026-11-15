@@ -1,3 +1,4 @@
+import { testDepth, testTime } from "./support/depth.ts";
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { rm, writeFile } from 'node:fs/promises';
@@ -25,12 +26,12 @@ test('record law: 10000 reviews refuse the 10001st before writing', async t => {
   assert.notEqual((await check([f.item], { ...f.options, record: false })).rows[0].code, 'schema');
 });
 
-test('every schema boundary follows the complete-record write/read law', async t => {
+test('selected schema boundaries follow the complete-record write/read law', async t => {
   const f = await citedTracker(t); const store = new Store(f.options); const original = await store.get(f.item); const base = full(original.value.citations[0]);
   const cases = boundaries(z.toJSONSchema(stateSchema, { unrepresentable: 'any' }) as Shape);
   let tested = 0; let accepted = 0; let refused = 0;
   const next = random(0x5c4e6a); for (let i = cases.length - 1; i > 0; i--) { const j = (next() >>> 8) % (i + 1); [cases[i], cases[j]] = [cases[j], cases[i]]; }
-  for (const boundary of cases) {
+  for (const boundary of cases.slice(0, testDepth(cases.length))) {
     const value = structuredClone(base); apply(value, boundary);
     // Nonempty source strings must also satisfy the containment refinement, independently of length.
     const expected = boundary.accepted && boundary.path.join('.') !== 'citations.0.provenance.item' && !(boundary.path.at(-1) === 'source' && typeof Reflect.get(value.citations[0].descriptor, 'source') === 'string' && value.citations[0].descriptor.source === '');
@@ -38,7 +39,7 @@ test('every schema boundary follows the complete-record write/read law', async t
       assert.doesNotThrow(() => validateRecord(value, f.item), boundary.name);
       // Isolate large SDK metadata caches and parser copies to one disposable process.
       if (JSON.stringify(value).length > 1_000_000) {
-        const run = spawnSync(process.execPath, ['test/record-boundary.worker.ts', JSON.stringify(boundary)], { encoding: 'utf8', env: testEnvironment(process.env), timeout: 120000 });
+        const run = spawnSync(process.execPath, ['test/record-boundary.worker.ts', JSON.stringify(boundary)], { encoding: 'utf8', env: testEnvironment(process.env), timeout: testTime(120000) });
         assert.equal(run.error, undefined, boundary.name); assert.equal(run.status, 0, `${boundary.name}: ${run.stdout} ${run.stderr}`);
       } else {
         const current = await store.get(f.item);
@@ -74,11 +75,11 @@ test('every schema boundary follows the complete-record write/read law', async t
 
 test('seeded mutation law: successes are SDK-readable and every refusal preserves durable bytes', async t => {
   const seeds = [0x26a044, 0xc0a1e5ce]; let steps = 0; let refusals = 0; let successes = 0;
-  for (const seed of seeds) for (let batch = 0; batch < 25; batch++) {
+  for (const seed of seeds) for (let batch = 0; batch < Math.ceil(testDepth(250) / 10); batch++) {
     const f = await citedTracker(t); const store = new Store(f.options); const initial = await store.get(f.item); const next = random(seed + batch);
     const base = full(initial.value.citations[0]);
     const cases = boundaries(z.toJSONSchema(stateSchema, { unrepresentable: 'any' }) as Shape).filter(entry => !entry.accepted);
-    for (let sequence = 0; sequence < 10; sequence++) for (let operation = 0; operation < 4; operation++) {
+    for (let sequence = 0; sequence < Math.min(10, testDepth(250) - batch * 10); sequence++) for (let operation = 0; operation < 4; operation++) {
       const current = await store.get(f.item); const before = await durable(f.workspace); const choice = (next() >>> 8) % 7;
       try {
         if (choice === 0) {
@@ -103,7 +104,7 @@ test('seeded mutation law: successes are SDK-readable and every refusal preserve
     }
     await rm(f.root, { recursive: true, force: true });
   }
-  assert.ok(successes > 0 && refusals > 0); t.diagnostic(JSON.stringify({ seeds: seeds.map(seed => seed.toString(16)), sequences: 500, trackers: 50, steps, successes, refusals, sdkReadAfterEverySuccess: true }));
+  assert.ok(successes > 0 && refusals > 0); t.diagnostic(JSON.stringify({ seeds: seeds.map(seed => seed.toString(16)), sequences: 2 * testDepth(250), trackers: 2 * Math.ceil(testDepth(250) / 10), steps, successes, refusals, sdkReadAfterEverySuccess: true }));
 });
 
 

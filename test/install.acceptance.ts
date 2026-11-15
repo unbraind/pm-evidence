@@ -1,3 +1,4 @@
+import { testTime } from "./support/depth.ts";
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -12,7 +13,7 @@ import { gitEnvironment, npmEnvironment } from '../scripts/environment.ts';
 
 /** Execute one packed-consumer step with isolated configuration and an asserted exit status. */
 function execute(cwd: string, executable: string, args: string[], env: NodeJS.ProcessEnv): string {
-  const result = spawnSync(executable, args, { cwd, env, encoding: 'utf8', timeout: 300000 }); assert.equal(result.error, undefined); assert.equal(result.status, 0, result.stdout + result.stderr); return result.stdout;
+  const result = spawnSync(executable, args, { cwd, env, encoding: 'utf8', timeout: testTime(300000) }); assert.equal(result.error, undefined); assert.equal(result.status, 0, result.stdout + result.stderr); return result.stdout;
 }
 for (const artifact of ['packed', 'git']) for (const manager of ['npm', 'bun']) test(`${artifact} ${manager} and ${manager === 'npm' ? 'npx' : 'bunx'} evidence journey`, t => {
   const repository = resolve(import.meta.dirname, '..'); const root = mkdtempSync(join(tmpdir(), 'evidence-packed-')); t.after(() => rmSync(root, { recursive: true, force: true }));

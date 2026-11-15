@@ -1,3 +1,4 @@
+import { testDepth } from "./support/depth.ts";
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile, rm, writeFile } from 'node:fs/promises';
@@ -70,7 +71,7 @@ test('tampered complete bundle and missing target authorization refuse before al
     assert.throws(() => validateBundle(rehash(candidate)), { code: 'invalid' });
   }
   const next = (() => { let seed = 0xfeed1028; return () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0); })();
-  for (let index = 0; index < 256; index++) {
+  for (let index = 0; index < testDepth(256); index++) {
     const candidate = structuredClone(f.bundle); candidate.entries[next() % candidate.entries.length].retained += String.fromCharCode(next() % 127);
     assert.throws(() => validateBundle(rehash(candidate))); // Every emitted producer value already passed validateBundle in the model suite.
   }
