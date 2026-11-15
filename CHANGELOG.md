@@ -4,6 +4,7 @@
 
 ### Other
 
+- Apply Fleet CI v2 quick PR and deep tiers ([pm-evidence-ci-v2](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/tasks/pm-evidence-ci-v2.toon))
 - Close delivered pm items and reserve in progress for active work (2026-10-24) ([pm-evidence-254g](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/chores/pm-evidence-254g.toon))
 
 ## 2026.11.11 - 2026-11-11
