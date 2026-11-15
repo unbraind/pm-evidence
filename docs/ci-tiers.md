@@ -13,14 +13,15 @@ revisions and checkout credential settings retain the existing immutable pins.
 | Committed distribution graph | — | yes | — | full npm + Bun |
 | Typecheck, lint, duplication, docstrings | — | yes | — | full npm + Bun |
 | Coverage, unchanged 100% statements/branches/functions/lines | — | quick | — | full npm + Bun |
-| Production audit, publish attestation verifier | — | yes | — | full npm + Bun |
+| Production audit | — | yes | — | full npm + Bun |
+| Publish attestation verifier (all tracked shebangs) | — | yes | yes | full npm + Bun |
 | Package dry-run, shipped README/docs and changelog | — | yes | yes | full npm + Bun |
 | Packed and Git npm/npx and Bun/bunx consumer acceptance | — | yes | — | full npm + Bun |
 | Bun package-graph install smoke | — | yes | — | yes |
 | CodeQL, separate required workflow | yes | yes | yes | main pushes + Monday 01:47 UTC |
 
 The docs path runs identity auditing on all post-baseline commits and additions,
-strict tracker health, changelog, package contents (including README, LICENSE,
+strict tracker health, publish attestation, changelog, package contents (including README, LICENSE,
 ARCHITECTURE and listed docs), and the tooling test that resolves the documented
 release tracking link. No separate secret/privacy command exists. Executable
 tracker files select the code path. No original gate is removed; the full npm
@@ -55,3 +56,16 @@ in 28m26s; creation-to-completion 114m25s and 154m31s. Schema-boundary law takes
 693.43s, transfer model 160.63s, binding model 134.50s and mutation model 94.72s.
 Quick timings are measured separately; no full local run is needed for this
 rollout. Full-depth certification is deferred to CI Deep after merge.
+
+Local quick selected tests passed 19/19 in 242.02s, with schema boundaries
+99.40s, transfer model 95.16s, binding model 28.98s and mutation law 32.38s.
+These local measurements cover a selected suite on different hardware, not the
+complete PR gate, and do not establish a direct speedup against hosted full CI.
+
+Publish-attestation discovery reads the first line of every tracked file for
+shell shebangs, including docs and tracker files, so it runs in the cheap path.
+
+The local quick coverage gate passed 212/212 tests and all 24 configured source
+files at unchanged 100/100/100/100 thresholds on Node 24.19.0. Its test phase
+took 905.12s (15m05s). Exact Node 22/26 CI and installation acceptance remain
+separate pending evidence.
