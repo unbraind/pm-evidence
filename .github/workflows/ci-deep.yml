@@ -14,11 +14,12 @@ permissions:
 
 concurrency:
   group: ci-deep-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 # Distinct check names prevent a manual branch run from matching required PR checks.
 jobs:
   deep:
+    name: deep (${{ matrix.node-version }}, ${{ matrix.package-manager }})
     # Busy local slots must queue. Only the fleet controller disables this pool
     # after all local hosts have been unreachable for ten minutes.
     runs-on: ${{ vars.PM_LOCAL_DEEP != 'off' && fromJSON('["self-hosted","pm-local"]') || 'ubuntu-latest' }}
@@ -27,6 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         node-version: [22, 26]
+        package-manager: [npm, bun]
     env:
       PM_TEST_DEPTH: full
       # Acceptance watchdogs allow slower local installs without becoming unbounded.
@@ -79,9 +81,11 @@ jobs:
 
 
       - name: Full npm release gate
+        if: matrix.package-manager == 'npm'
         run: npm run release:check
 
       - name: Full Bun release gate
+        if: matrix.package-manager == 'bun'
         run: bun run release:check
 
       - name: Verify Bun can install the package graph

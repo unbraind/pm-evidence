@@ -5,7 +5,7 @@ and deliberately has no path exclusions. Hosted Ubuntu quick jobs run on PRs
 and dispatch, with 30-minute limits and superseded PR cancellation. Action
 revisions and checkout credential settings retain the existing immutable pins.
 
-| Check | Code PR 22 | Code PR 26 | Docs/tracker PR, both | Deep 22 + 26 |
+| Check | Code PR 22 | Code PR 26 | Docs/tracker PR, both | Deep 22/26 × npm/Bun |
 | --- | --- | --- | --- | --- |
 | npm ci / merge-driver prepare / strict health | yes | yes | yes | yes |
 | Identity and private-path policy | yes | yes | yes | yes |
@@ -34,8 +34,8 @@ without separate coverage, changelog or pack commands.
 
 Deep runs main pushes, manual dispatch and nightly 02:47 UTC, separate from
 release 03:23 and hourly reconciliation :41. Distinct `deep` names prevent
-matching PR requirements. Both Nodes run both full npm and Bun release gates,
-with 120-minute limits, per-ref cancellation, full depth and time scale 3.
+matching PR requirements. The Node × package-manager matrix runs one full gate per job,
+with 120-minute limits, per-ref queuing without cancelling active runs, full depth and time scale 3.
 Persistent local runners are selected unless `PM_LOCAL_DEEP=off`; npm cache
 restoration and Bun setup run only on hosted hardware. Local Bun is logged.
 
@@ -69,3 +69,14 @@ The local quick coverage gate passed 212/212 tests and all 24 configured source
 files at unchanged 100/100/100/100 thresholds on Node 24.19.0. Its test phase
 took 905.12s (15m05s). Exact Node 22/26 CI and installation acceptance remain
 separate pending evidence.
+
+Template follow-up: executable tracker files (`mjs`, `cjs`, `js`, `jsx`, `ts`,
+`tsx`, `mts`, `cts`, `sh`), tracker extensions and executable files under `docs/`
+select the code tier, including nested paths. CodeQL is a required check
+(`codeql`), so its paths remain unfiltered. Existing hosted-only npm cache restoration and Bun setup, with
+`bun --version` on local runners, are retained. No quick-depth reduction or
+sharding was needed from the latest successful PR execution measurements.
+
+Follow-up baseline: [successful PR run 43735328882](https://github.com/unbraind/pm-evidence/actions/runs/43735328882).
+Node 22/26 execution: 2m28s / 5m56s; created-to-completed including queue:
+45m57s / 31m27s. Both executions fit the approximately 15-minute target.
