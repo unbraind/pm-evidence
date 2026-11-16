@@ -4,8 +4,8 @@
 
 ### Other
 
-- Apply Fleet CI v2 quick PR and deep tiers ([pm-evidence-ci-v2](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/tasks/pm-evidence-ci-v2.toon))
 - Close delivered pm items and reserve in progress for active work (2026-10-24) ([pm-evidence-254g](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/chores/pm-evidence-254g.toon))
+- Apply Fleet CI v2 quick PR and deep tiers ([pm-evidence-ci-v2](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/tasks/pm-evidence-ci-v2.toon))
 
 ## 2026.11.11 - 2026-11-11
 
@@ -60,8 +60,8 @@ No changes.
 
 ### Added
 
-- Verify shared citation sources once per check ([pm-evidence-coalesced-source-verification](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-coalesced-source-verification.toon))
 - Report criterion bindings that lose current source support ([pm-evidence-criterion-bindings](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-criterion-bindings.toon))
+- Verify shared citation sources once per check ([pm-evidence-coalesced-source-verification](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-coalesced-source-verification.toon))
 - Evidence cite ([pm-evidence-cite](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-cite.toon))
 - Evidence affected ([pm-evidence-affected](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-affected.toon))
 - Evidence check ([pm-evidence-check](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-check.toon))
