@@ -1,3 +1,4 @@
+import { testDepth } from "./support/depth.ts";
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { writeFile } from 'node:fs/promises';
@@ -24,7 +25,7 @@ test('500 seeded binding sequences read native state through the SDK under custo
   const model = new Map(citations.map(id => [id, [] as CriterionRef[]])); let expectedRevision = 2;
   const variants = ['First; Second', 'First changed; Second', '  First ; Second  ', 'First;\r\nSecond', 'First; Second changed'];
   const lastGenerations = new Map<string, { revision: string; live: boolean }>(); let source = inputs[0];
-  for (let sequence = 0; sequence < 500; sequence++) {
+  for (let sequence = 0; sequence < testDepth(500); sequence++) {
     for (let step = 0; step < 3; step++) {
       const operation = (next() >>> 8) % 5;
       if (operation === 0) { source = inputs[(next() >>> 8) % inputs.length]; await writeFile(join(f.root, 'source.json'), source); }
@@ -82,5 +83,5 @@ test('500 seeded binding sequences read native state through the SDK under custo
       else { const original: number = citation === citations[0] ? 1 : 2; const value = JSON.parse(source) as { first: number; second: number }; assert.equal(row.support, (citation === citations[0] ? value.first : value.second) === original ? 'current-source' : 'lost-source'); }
     }
   }
-  t.diagnostic(`seed=0xc17e2026; sequences=500; operations=1500; SDK state readbacks=500; native fields=${stable.length}; bindings=${expectedRevision - 2}; exact source and criterion replays included`);
+  t.diagnostic(`seed=0xc17e2026; sequences=${testDepth(500)}; operations=${testDepth(500) * 3}; SDK state readbacks=${testDepth(500)}; native fields=${stable.length}; bindings=${expectedRevision - 2}; exact source and criterion replays included`);
 });

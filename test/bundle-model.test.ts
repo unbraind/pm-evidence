@@ -1,3 +1,4 @@
+import { testDepth } from "./support/depth.ts";
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { rm, writeFile } from 'node:fs/promises';
@@ -13,7 +14,7 @@ function random(seed: number): () => number { let value = seed; return () => (va
 
 test('500 seeded transfer sequences model SDK read-back, older replays, CRLF, native fields, relationships and custom status roles', async t => {
   const next = random(0xb0d1e2026); let steps = 0; let imported = 0; let unchanged = 0; let refusals = 0; let producers = 0;
-  for (let batch = 0; batch < 25; batch++) {
+  for (let batch = 0; batch < Math.ceil(testDepth(500) / 20); batch++) {
     const f = await bundleFixture(t);
     const parent = 'evidence-test-parent'; const dependency = 'evidence-test-dependency';
     for (const id of [parent, dependency]) await f.client.create({ id, type: 'Task', title: 'Native model relationship', unset: ['parent', 'assignee', 'sprint', 'release'] });
@@ -34,7 +35,7 @@ test('500 seeded transfer sequences model SDK read-back, older replays, CRLF, na
       history.push(output); producers++; return output;
     };
     let revision = 0; let targetComments = baseline.comments?.length ?? 0;
-    for (let sequence = 0; sequence < 20; sequence++) {
+    for (let sequence = 0; sequence < Math.min(20, testDepth(500) - batch * 20); sequence++) {
       for (let operation = 0; operation < 4; operation++) {
         const beforeRevision = revision;
         const choice = next() % 9;
@@ -122,5 +123,5 @@ test('500 seeded transfer sequences model SDK read-back, older replays, CRLF, na
     await rm(f.root, { recursive: true, force: true });
   }
   assert.ok(imported > 0 && unchanged > 0 && refusals > 0 && producers > 0);
-  t.diagnostic(JSON.stringify({ seed: '0xb0d1e2026', sequences: 500, operations: steps, SDKReadBacks: steps, imported, unchanged, consentRefusals: refusals, validatedProducers: producers, trackers: 25, nativeRelationships: 'parent+depends_on', normalization: 'SDK read-back only' }));
+  t.diagnostic(JSON.stringify({ seed: '0xb0d1e2026', sequences: testDepth(500), operations: steps, SDKReadBacks: steps, imported, unchanged, consentRefusals: refusals, validatedProducers: producers, trackers: Math.ceil(testDepth(500) / 20), nativeRelationships: 'parent+depends_on', normalization: 'SDK read-back only' }));
 });

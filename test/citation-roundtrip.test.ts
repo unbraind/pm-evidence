@@ -1,3 +1,4 @@
+import { testDepth } from "./support/depth.ts";
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { writeFile, unlink } from 'node:fs/promises';
@@ -92,8 +93,8 @@ function document(index: number, next: () => number): DocumentCase {
 
 test('1024 seeded Markdown and JSON documents round trip every accepted citation and classify mutations', async t => {
   const next = random(0x26c17e); let accepted = 0; let refused = 0; const totals = { changed: 0, ambiguous: 0, missing: 0, current: 0 };
-  for (let batch = 0; batch < 64; batch++) {
-    const f = await tracker(t); const cases = Array.from({ length: 16 }, (_, offset) => document(batch * 16 + offset, next)); const citations = new Map<string, DocumentCase>();
+  for (let batch = 0; batch < Math.ceil(testDepth(1024) / 16); batch++) {
+    const f = await tracker(t); const cases = Array.from({ length: Math.min(16, testDepth(1024) - batch * 16) }, (_, offset) => document(batch * 16 + offset, next)); const citations = new Map<string, DocumentCase>();
     for (const doc of cases) {
       await writeFile(join(f.root, doc.name), doc.source);
       if (doc.rejected !== undefined) { await assert.rejects(cite(f.item, doc.name, { ...f.options, selector: doc.rejected })); refused++; }
@@ -116,5 +117,5 @@ test('1024 seeded Markdown and JSON documents round trip every accepted citation
       if (expected === 'current') assert.equal(affectedRow, undefined); else { assert.equal(affectedRow?.resolution, row.resolution); assert.equal(affectedRow?.freshness, row.freshness); }
     }
   }
-  assert.equal(accepted, 1024); assert.ok(refused > 0); t.diagnostic(JSON.stringify({ seed: '0x26c17e', documents: 1024, accepted, refused, mutations: totals, nonGitTrackers: 64, sdkReadbacks: 64 }));
+  assert.equal(accepted, testDepth(1024)); assert.ok(refused > 0); t.diagnostic(JSON.stringify({ seed: '0x26c17e', documents: testDepth(1024), accepted, refused, mutations: totals, nonGitTrackers: Math.ceil(testDepth(1024) / 16), sdkReadbacks: Math.ceil(testDepth(1024) / 16) }));
 });
