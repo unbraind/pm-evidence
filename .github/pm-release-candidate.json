@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "repository": "unbraind/pm-evidence",
-  "baseSha": "f204dc0767d06f1db51382c627a7da994cc8a083",
+  "baseSha": "0f99c3dc67b29c7630e874d6273e608d38b94fcb",
   "version": "2026.11.15",
-  "runId": 43707827435,
+  "runId": 43860139759,
   "runAttempt": 1,
   "configDigest": "742e1bd4061de427ab4a2be788db9821ff279704051ddefa86ed369f98f0a947"
 }
