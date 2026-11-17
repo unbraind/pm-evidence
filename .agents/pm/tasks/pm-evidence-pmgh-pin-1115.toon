@@ -2,12 +2,17 @@ id: pm-evidence-pmgh-pin-1115
 title: Verify the pm-github 2026.11.15 caller pin and review concern
 description: ""
 type: Task
-status: in_progress
+status: closed
 priority: 2
 tags[1]: "gh:unbraind/pm-evidence#55"
 created_at: "2026-11-16T12:12:10.182Z"
-updated_at: "2026-11-16T13:09:35.535Z"
+updated_at: "2026-11-16T20:27:35.958Z"
+closed_at: "2026-11-16T20:27:35.945Z"
+completed_at: "2026-11-16T20:27:35.945Z"
 author: codex-sol
+resolution: Implemented and merged in #55 (43969f7).
+expected_result: The change described by this item is on main.
+actual_result: "Merged in #55 as 43969f7; checks successful at head 0bd2041: CodeQL, codeql, test (22), test (26)."
 comments[5]{created_at,author,text}:
   "2026-11-16T12:12:21.799Z",codex-sol,"Merged current main and retained the sync caller pin. No failing checks at the inspected head. Thread PRRT_kwDOVUfUaM63oQ5T correctly notes the conditional GITHUB_TOKEN post-merge push-workflow gap. Read-only repository APIs show allow_auto_merge=true, required checks strict=false and no applicable branch rules; pinned sync lines 770-785 refuse arming auto-merge without strict checks or a merge queue, so it is currently unarmed. No automation App credentials are supplied by this caller. Refuse speculative App wiring and forbidden secret/settings changes; preserve dispatch and record the operational caveat without claiming it is permanently solved. This repo has only a sync caller, so no closeout caller is added."
   "2026-11-16T12:23:26.252Z",codex-sol,"Read-only GraphQL additionally confirms requiresStatusChecks=true and requiresStrictStatusChecks=false; no applicable branch rules. Exact sync caller-contract regression, typecheck, lint, tracker validation and production npm audit pass after dependency installation completed. Regenerated CHANGELOG.md with changelog:full because this tracker includes in-progress items. The quick suite remains running; no CI success or auto-merge execution claimed."
@@ -22,4 +27,5 @@ tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node --test test/pm-github-callers.test.ts,project,codex-sol,"2026-11-16T12:14:03.806Z",local_mutation,ci/pm-github-2026.11.15-bounded-ci-dispatch
 docs[1]{path,scope}:
   docs/ci-tiers.md,project
+close_reason: "Delivered by #55 \"Pin pm-github 2026.11.15 so sync and closeout stop holding runners while CI runs\" (merged as 43969f7). Checks successful at the PR head 0bd2041: CodeQL, codeql, test (22), test (26)."
 body: ""
