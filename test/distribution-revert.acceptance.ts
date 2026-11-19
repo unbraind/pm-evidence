@@ -24,7 +24,7 @@ function command(root: string, executable: string, args: string[], env: NodeJS.P
 
 /** Pin each mutant as a real commit so git consumers cannot accidentally read the fixed working tree. */
 function commit(root: string, env: NodeJS.ProcessEnv): void {
-  command(root, 'git', ['-c', 'user.name=SteveBot', '-c', 'user.email=1153461+unbraind@users.noreply.github.com', 'commit', '-m', 'test: disposable distribution negative control'], env);
+  command(root, 'git', ['-c', 'user.name=unbrained', '-c', 'user.email=1153461+unbraind@users.noreply.github.com', 'commit', '-m', 'test: disposable distribution negative control'], env);
 }
 
 /** Assert a specific behavioral failure count, excluding install/setup failures as evidence. */
