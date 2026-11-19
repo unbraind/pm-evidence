@@ -1,0 +1,22 @@
+id: pm-evidence-identity-unbrained
+title: Use the unbrained commit identity
+description: "Apply the 2026-11-19 owner decision to tracked fixtures, documentation, and PM history. Verify identity mapping and package gates."
+type: Chore
+status: open
+priority: 2
+tags: []
+created_at: "2026-11-19T11:32:44.796Z"
+updated_at: "2026-11-19T11:50:15.897Z"
+author: codex-sol
+comments[3]{created_at,author,text}:
+  "2026-11-19T11:32:55.429Z",codex-sol,The owner selected unbrained as the fleet commit name and retained the existing noreply address. Verify package checks and reseal affected PM histories.
+  "2026-11-19T11:49:11.355Z",codex-sol,The distribution fixture reached the Git install path with Bun but could not resolve the disposable commit. The same assertions are being checked with a newer Bun release.
+  "2026-11-19T11:50:11.987Z",codex-sol,"Local tests, typecheck, tracker health, and changelog checks completed. History redaction verified for 0 items with zero hash mismatches. Historical Git attribution matched per commit after mapping 1 approved-address records to the fleet name."
+files[2]{path,scope}:
+  .mailmap,project
+  test/distribution-revert.acceptance.ts,project
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  npm run typecheck,project,600,codex-sol,"2026-11-19T11:39:41.131Z",local_mutation,chore/commit-identity-unbrained
+  "npm run test:dist:revert",project,600,codex-sol,"2026-11-19T11:40:12.580Z",local_mutation,chore/commit-identity-unbrained
+  "npm run identity:check",project,600,codex-sol,"2026-11-19T11:42:14.823Z",local_mutation,chore/commit-identity-unbrained
+body: ""
