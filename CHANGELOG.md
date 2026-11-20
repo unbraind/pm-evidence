@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026.11.20 - 2026-11-20
+
+### Dependencies
+
+- Bump the pm-toolchain group with 3 updates ([#74](https://github.com/unbraind/pm-evidence/pull/74))
+- Bump unbraind/pm-ops/.github/workflows/daily-release.yml ([#73](https://github.com/unbraind/pm-evidence/pull/73))
+- Bump @unbrained/pm-cli ([#69](https://github.com/unbraind/pm-evidence/pull/69))
+
 ## 2026.11.18 - 2026-11-18
 
 ### Dependencies
