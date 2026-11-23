@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.11.23 - 2026-11-23
+
+### Dependencies
+
+- Bump the pm-toolchain group with 3 updates ([#75](https://github.com/unbraind/pm-evidence/pull/75))
+
 ## 2026.11.20 - 2026-11-20
 
 ### Dependencies
