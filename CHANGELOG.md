@@ -47,6 +47,12 @@
 
 - Update the toolchain and render empty daily changelog windows ([pm-evidence-toolchain-1104](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/chores/pm-evidence-toolchain-1104.toon))
 
+### Dependencies
+
+- Bump unbraind/pm-github/.github/workflows/pm-github-sync.yml ([#39](https://github.com/unbraind/pm-evidence/pull/39))
+- Bump the codeql-action group with 2 updates ([#38](https://github.com/unbraind/pm-evidence/pull/38))
+- Bump the pm-toolchain group with 3 updates ([#36](https://github.com/unbraind/pm-evidence/pull/36))
+
 ## 2026.11.3 - 2026-11-03
 
 No changes.
@@ -70,6 +76,12 @@ No changes.
 ### Added
 
 - Transfer selected retained citations as validated portable bundles ([pm-evidence-portable-bundles](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/features/pm-evidence-portable-bundles.toon))
+
+### Dependencies
+
+- Bump unbraind/pm-github/.github/workflows/pm-github-sync.yml ([#24](https://github.com/unbraind/pm-evidence/pull/24))
+- Bump the codeql-action group with 2 updates ([#23](https://github.com/unbraind/pm-evidence/pull/23))
+- Bump the pm-toolchain group with 3 updates ([#18](https://github.com/unbraind/pm-evidence/pull/18))
 
 ## 2026.10.28 - 2026-10-28
 
