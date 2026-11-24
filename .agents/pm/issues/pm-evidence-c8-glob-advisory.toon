@@ -1,0 +1,12 @@
+id: pm-evidence-c8-glob-advisory
+title: Update the c8 development chain for GHSA-3g3m-2fjr-6pw4
+description: "npm audit reports one moderate glob advisory through c8 12.0.0, test-exclude 8.0.0 and glob 13.0.6. The same development-only versions are in the base lockfile. The production audit passes with zero findings. Found while working on pm-evidence-sdk-host-alignment-1122."
+type: Issue
+status: open
+priority: 2
+tags[2]: dev-dependency,security
+created_at: "2026-11-24T10:17:34.159Z"
+updated_at: "2026-11-24T10:17:34.159Z"
+author: codex-agent
+acceptance_criteria: Remove the advisory from the locked development dependency chain and verify that the coverage gate still meets its existing thresholds.
+body: ""

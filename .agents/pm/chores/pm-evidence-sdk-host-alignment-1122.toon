@@ -1,0 +1,22 @@
+id: pm-evidence-sdk-host-alignment-1122
+title: Adopt pm-cli 2026.11.24 host-aligned SDK behaviour
+description: Part of the SDK migration tracked by pm-cli-website-spus. Preserve the dependency notes from published releases.
+type: Chore
+status: in_progress
+priority: 2
+tags: []
+created_at: "2026-11-24T09:22:52.403Z"
+updated_at: "2026-11-24T09:25:25.442Z"
+assignee: codex-agent
+claim_principal: codex-agent
+author: codex-agent
+acceptance_criteria: "Pin the current first-party toolchain, verify evidence behaviour under the host-aligned SDK, retain dependency notes across all changelog entry points, and pass the package release gates."
+files[3]{path,scope}:
+  package-lock.json,project
+  package.json,project
+  test/release-workflow.test.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  "node --test --test-concurrency=2 --test-name-pattern=\"retains published dependency updates\" test/release-workflow.test.ts",project,codex-agent,"2026-11-24T09:25:25.368Z",local_mutation,deps/adopt-pm-cli-host-alignment-1122
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+body: ""
