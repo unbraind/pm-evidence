@@ -6,11 +6,13 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-11-24T09:22:52.403Z"
-updated_at: "2026-11-24T09:25:25.442Z"
+updated_at: "2026-11-24T13:40:32.434Z"
 assignee: codex-agent
 claim_principal: codex-agent
 author: codex-agent
 acceptance_criteria: "Pin the current first-party toolchain, verify evidence behaviour under the host-aligned SDK, retain dependency notes across all changelog entry points, and pass the package release gates."
+comments[1]{created_at,author,text}:
+  "2026-11-24T13:40:32.434Z",codex-agent,"The base already includes the merged toolchain PR #77. On pm-cli 2026.11.24 the full baseline passed 217/217. The older reported Dependabot failure did not reproduce. Native command, budget and SDK evidence tests passed with no application or assertion changes.\n\nThe generator supplies dependency notes by default for qualifying itemless releases. All four package entry points now explicitly include dependency commits so releases with tracked items also receive them. Regeneration retains all 13 published bullets under their original releases and produces 30 total. The flag contract failed when each flag was removed independently and passed after restoration.\n\nThe release workflow tests passed 7/7, the linked pm test passed, and build, typecheck, lint, duplication, identity and privacy, strict health, changelog check and production audit passed. The npm and Bun release checks are queued behind pm-ado to keep the full suites serial.\n\nA separate pre-existing development-only glob advisory is tracked in pm-evidence-c8-glob-advisory. The locked c8 chain is identical on the base and the migration branch, and the production audit has zero findings."
 files[3]{path,scope}:
   package-lock.json,project
   package.json,project
