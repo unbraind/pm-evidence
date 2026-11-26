@@ -4,7 +4,7 @@
 
 ### Dependencies
 
-- Bump unbraind/pm-ops/.github/workflows/daily-release.yml
+- Bump unbraind/pm-ops/.github/workflows/daily-release.yml from 2026.11.15 to 2026.11.22 ([#83](https://github.com/unbraind/pm-evidence/pull/83))
 
 ## 2026.11.24 - 2026-11-25
 
@@ -66,11 +66,19 @@
 
 - Canonicalize repeated-dot custom provider source identities ([pm-evidence-custom-provider-canonical](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-custom-provider-canonical.toon))
 
+### Closed
+
+- Closed: PR \#42 skips custom-provider citations when affected receives the same repeated-dot source operand ([pm-evidence-github-cc12c36f952a-43](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-github-cc12c36f952a-43.toon))
+
 ## 2026.11.7 - 2026-11-07
 
 ### Fixed
 
 - Match canonical source paths in affected changed filters ([pm-evidence-canonical-source-paths](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-canonical-source-paths.toon))
+
+### Closed
+
+- Closed: affected --changed silently skips citations with equivalent relative path spellings ([pm-evidence-github-cc12c36f952a-40](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-github-cc12c36f952a-40.toon))
 
 ## 2026.11.6 - 2026-11-06
 
