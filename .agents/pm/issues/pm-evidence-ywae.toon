@@ -1,0 +1,16 @@
+id: pm-evidence-ywae
+title: Pin the coalesced evidence revert baseline
+description: "The standalone coalesced evidence revert harness gets its historical snapshot implementation from origin/main. That ref now has the same function as the package worktree, so the snapshot replacement is a no-op and stops the harness before its remaining controls. Found while checking callers of the shared revert helper for PR 88."
+type: Issue
+status: open
+priority: 3
+tags[2]: follow-up,testing
+created_at: "2026-11-27T17:09:25.165Z"
+updated_at: "2026-11-27T17:09:45.892Z"
+author: codex-agent
+acceptance_criteria: "Use an immutable pre-fix snapshot or a focused mutation that changes only the intended behavior, then verify the corresponding isolated behavioral failure."
+comments[1]{created_at,author,text}:
+  "2026-11-27T17:09:45.891Z",codex-agent,"In disposable source copies, both the previous and updated revert helpers produced the same no-op assertion at test/coalesced-revert.acceptance.ts:33. The preceding source-sharing negative control passed in both runs."
+files[1]{path,scope}:
+  test/coalesced-revert.acceptance.ts,project
+body: ""

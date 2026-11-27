@@ -25,16 +25,61 @@ function pointer(text, path) {
     const tokens = (path === '' ? [] : path.slice(1).split('/')).map(part => part.replace(/~1/g, '/').replace(/~0/g, '~'));
     return jsonFragment(text, tokens);
 }
+/** JavaScript multiline anchors treat LF, CR, LS and PS alike when splitting lines. */
+function isLineTerminator(char) { return char === '\n' || char === '\r' || char === '\u2028' || char === '\u2029'; }
+/** Parse one line exactly as the retired ATX regex did, in a single non-backtracking scan. */
+function parseHeadingLine(text, start, end, matchEnd) {
+    let depth = 0;
+    while (depth < 7 && start + depth < end && text[start + depth] === '#')
+        depth++;
+    if (depth === 0 || depth === 7)
+        return null;
+    let width = depth;
+    while (start + width < end && (text[start + width] === ' ' || text[start + width] === '\t'))
+        width++;
+    if (width === depth)
+        return null;
+    const content = start + width;
+    if (content === end)
+        return width === depth + 1 ? null : { depth, title: text.slice(end - 1, end), start, end: matchEnd };
+    let scan = end - 1;
+    while (scan >= content && (text[scan] === ' ' || text[scan] === '\t'))
+        scan--;
+    while (scan >= content && text[scan] === '#')
+        scan--;
+    while (scan >= content && (text[scan] === ' ' || text[scan] === '\t'))
+        scan--;
+    const tail = Math.max(scan + 1, content + 1);
+    return { depth, title: text.slice(content, tail), start, end: matchEnd };
+}
+/** Yield every ATX heading starting before the exclusive end bound, in reading order, one linear pass per line, hostile input included; consumers that reduce to a bounded working set never materialize the whole list. */
+export function* headingLines(text, end = text.length) {
+    const limit = Number.isNaN(end) ? text.length : Math.max(0, Math.min(end, text.length));
+    const length = text.length;
+    let start = 0;
+    while (start < limit) {
+        let lineEnd = start;
+        while (lineEnd < length && !isLineTerminator(text[lineEnd]))
+            lineEnd++;
+        const matchEnd = lineEnd < length && text[lineEnd] === '\r' && (lineEnd + 1 === length || isLineTerminator(text[lineEnd + 1])) ? lineEnd + 1 : lineEnd;
+        const heading = parseHeadingLine(text, start, lineEnd, matchEnd);
+        if (heading !== null)
+            yield heading;
+        if (lineEnd === length)
+            break;
+        start = lineEnd + 1;
+    }
+}
 /** Select an ATX heading's paragraph; duplicate headings cannot establish identity. */
 function paragraph(text, selector) {
-    const headings = [...text.matchAll(/^(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*\r?$/gm)];
-    const matches = headings.filter(entry => entry[2] === selector.heading);
+    const headings = [...headingLines(text)];
+    const matches = headings.filter(entry => entry.title === selector.heading);
     if (matches.length !== 1)
         throw new EvidenceError(matches.length === 0 ? 'missing' : 'ambiguous', 'Heading is absent or repeated', 'Select a unique ATX heading');
     const heading = matches[0];
-    const start = heading.index + heading[0].length;
-    const next = headings.find(entry => entry.index > heading.index && entry[1].length <= heading[1].length);
-    const section = text.slice(start, next?.index);
+    const start = heading.end;
+    const next = headings.find(entry => entry.start > heading.start && entry.depth <= heading.depth);
+    const section = text.slice(start, next?.start);
     const paragraphs = [...section.matchAll(/\S[^\n]*(?:\n(?![ \t]*\r?$)[^\n]+)*/gm)].filter(entry => !entry[0].startsWith('#'));
     const selected = paragraphs[selector.paragraph - 1];
     if (selected === undefined)
@@ -59,15 +104,13 @@ export function select(text, selector) {
     requireInput(fragment.length > 0, 'An anchor cannot cite an empty fragment');
     return { text: fragment, start, end: start + fragment.length };
 }
-/** Determine the full ATX heading ancestry at the cited passage, including repeated parent titles. */
+/** Determine the full ATX heading ancestry at the cited passage, scanning only lines before the offset, including repeated parent titles. */
 export function sectionPath(text, offset) {
     const stack = [];
-    for (const heading of text.matchAll(/^(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*\r?$/gm)) {
-        if (heading.index >= offset)
-            break;
-        while (stack.length > 0 && stack.at(-1).depth >= heading[1].length)
+    for (const heading of headingLines(text, offset)) {
+        while (stack.length > 0 && stack.at(-1).depth >= heading.depth)
             stack.pop();
-        stack.push({ depth: heading[1].length, title: heading[2] });
+        stack.push({ depth: heading.depth, title: heading.title });
     }
     return ancestrySchema.parse(stack.map(entry => entry.title));
 }

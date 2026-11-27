@@ -7,7 +7,9 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
+import { decodeToon } from '@unbrained/pm-cli/sdk/testing';
 import * as sourceSdk from '../index.ts';
+import type { CheckRow, Packet } from '../index.ts';
 import { artifactInventory, assertArtifactGraph, committedArtifacts } from './distribution-helpers.ts';
 import { gitEnvironment, npmEnvironment } from '../scripts/environment.ts';
 
@@ -113,4 +115,16 @@ await assertCitationReuseContract(sdk, contractCli);
   globalPm(['evidence', 'check', 'packed-decision', '--root', '.', '--json']);
   assert.match(globalPm(['files', 'packed-global-recipient', '--list', '--json']), /Global recipient annotation/);
   assert.match(globalPm(['files', 'packed-decision', '--list', '--json']), /Packed source annotation/);
+
+  writeFileSync(join(consumer, 'data.json'), exactSource);
+  const pointer = JSON.parse(pm(['evidence', 'cite', 'packed-decision', 'data.json', '--pointer', '/n', '--json'])) as { citation: string };
+  writeFileSync(join(consumer, 'data.json'), exactSource.replace('9007199254740993', '9007199254740992'));
+  const currentDigest = createHash('sha256').update('9007199254740992').digest('hex');
+  for (const format of [[], ['--json']]) {
+    const output = pm(['evidence', 'check', 'packed-decision', '--read-only', ...format]);
+    const packet = (format.length === 0 ? decodeToon(output) : JSON.parse(output)) as Packet<CheckRow>;
+    const row = packet.rows.find(entry => entry.citation === pointer.citation);
+    assert.equal(row?.freshness, 'changed');
+    assert.equal(row.currentDigest, currentDigest);
+  }
 });
