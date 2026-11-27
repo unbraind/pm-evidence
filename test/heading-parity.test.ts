@@ -17,6 +17,18 @@ const parityCorpus: readonly string[] = [
   '# x        y', '#     ###y', '# \t\t##y',
   'a\n# Mid\ndoc\n\r\n', '# One\n# Two\n## Three\n# Four\n', '', '\n', '\r\n', 'no headings at all'
 ];
+/** Build one deterministic random document whose lines mix hashes, whitespace and embedded line terminators. */
+function randomDocument(random: () => number, lineCount: number, maxWidth: number, joiners: readonly string[]): string {
+  const alphabet = ['#', ' ', '\t', 'a', '#', ' ', '#', '\n', '\r', '\u2028', 'x'];
+  const lines: string[] = [];
+  for (let line = 0; line < lineCount; line++) {
+    let text = '';
+    const width = Math.floor(random() * maxWidth);
+    for (let index = 0; index < width; index++) text += alphabet[Math.floor(random() * alphabet.length)];
+    lines.push(text);
+  }
+  return lines.join(joiners[Math.floor(random() * joiners.length)]);
+}
 /** Read the retired regex's depth, title and span tuples from one document. */
 function retiredHeadings(text: string): { depth: number; title: string; start: number; end: number }[] {
   return [...text.matchAll(retiredHeadingRegex)].map(match => ({ depth: match[1].length, title: match[2], start: match.index, end: match.index + match[0].length }));
@@ -33,16 +45,8 @@ test('linear heading parser matches the retired regex byte-for-byte on normal, e
 
 test('randomized documents keep the linear parser byte-identical to the retired regex', () => {
   const random = seededRandom(20261127);
-  const alphabet = ['#', ' ', '\t', 'a', '#', ' ', '#', '\n', '\r', '\u2028', 'x'];
   for (let round = 0; round < 400; round++) {
-    const lines: string[] = [];
-    for (let line = 0; line < 6; line++) {
-      let text = '';
-      const width = Math.floor(random() * 24);
-      for (let index = 0; index < width; index++) text += alphabet[Math.floor(random() * alphabet.length)];
-      lines.push(text);
-    }
-    const document = lines.join(random() < 0.5 ? '\n' : random() < 0.5 ? '\r\n' : '\u2028');
+    const document = randomDocument(random, 6, 24, ['\n', '\r\n', '\u2028']);
     assert.deepEqual(headingLines(document), retiredHeadings(document), JSON.stringify(document));
   }
 });
@@ -81,29 +85,16 @@ test('the retired regex demonstrably exceeds the same budget on the hostile line
   assert.equal(probe.signal, 'SIGTERM', 'the retired regex finished the hostile line within the budget');
 });
 
-/** The retired unbounded ancestry scan, kept as the equivalence oracle for the offset bound. */
+/** The retired unbounded ancestry scan, kept as an independent equivalence oracle for the offset bound. */
 function retiredSectionPath(text: string, offset: number): string[] {
-  const stack: { depth: number; title: string }[] = [];
-  for (const heading of headingLines(text)) {
-    if (heading.start >= offset) break;
-    while (stack.length > 0 && stack.at(-1)!.depth >= heading.depth) stack.pop();
-    stack.push({ depth: heading.depth, title: heading.title });
-  }
-  return stack.map(entry => entry.title);
+  const headings = headingLines(text).filter(heading => !(heading.start >= offset));
+  return headings.filter((heading, index) => headings.slice(index + 1).every(later => later.depth > heading.depth)).map(entry => entry.title);
 }
 
 test('the offset bound keeps ancestry byte-identical to the unbounded scan for every offset kind', () => {
   const random = seededRandom(861127 + 7);
-  const alphabet = ['#', ' ', '\t', 'a', '#', ' ', '#', '\n', '\r', '\u2028', 'x'];
   for (let round = 0; round < 300; round++) {
-    const lines: string[] = [];
-    for (let line = 0; line < 8; line++) {
-      let text = '';
-      const width = Math.floor(random() * 20);
-      for (let index = 0; index < width; index++) text += alphabet[Math.floor(random() * alphabet.length)];
-      lines.push(text);
-    }
-    const document = lines.join(random() < 0.5 ? '\n' : '\r\n');
+    const document = randomDocument(random, 8, 20, ['\n', '\r\n']);
     for (const offset of [0, 1, 2.5, -3, document.length / 2, document.length - 1, document.length, document.length + 5, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
       assert.deepEqual(sectionPath(document, offset), retiredSectionPath(document, offset), JSON.stringify([document, offset]));
     }
@@ -112,16 +103,8 @@ test('the offset bound keeps ancestry byte-identical to the unbounded scan for e
 
 test('the heading list bound returns exactly the headings starting before it', () => {
   const random = seededRandom(20261127 + 5);
-  const alphabet = ['#', ' ', '\t', 'a', '#', ' ', '#', '\n', '\r', '\u2028', 'x'];
   for (let round = 0; round < 300; round++) {
-    const lines: string[] = [];
-    for (let line = 0; line < 8; line++) {
-      let text = '';
-      const width = Math.floor(random() * 20);
-      for (let index = 0; index < width; index++) text += alphabet[Math.floor(random() * alphabet.length)];
-      lines.push(text);
-    }
-    const document = lines.join(random() < 0.5 ? '\n' : '\u2028');
+    const document = randomDocument(random, 8, 20, ['\n', '\u2028']);
     const full = headingLines(document);
     for (const bound of [-3, 0, 1, 2.5, document.length / 2, document.length - 1, document.length, document.length + 9]) {
       assert.deepEqual(headingLines(document, bound), full.filter(entry => entry.start < bound), JSON.stringify([document, bound]));

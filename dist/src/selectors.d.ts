@@ -16,11 +16,11 @@ export interface HeadingLine {
     start: number;
     end: number;
 }
-/** List every ATX heading in reading order in one linear pass per line, hostile input included. */
-export declare function headingLines(text: string): HeadingLine[];
+/** List every ATX heading starting before the exclusive end bound, in reading order, in one linear pass per line, hostile input included. */
+export declare function headingLines(text: string, end?: number): HeadingLine[];
 /** Resolve the caller's initial structural selector without whole-document output. */
 export declare function select(text: string, selector: Selector): Fragment;
-/** Determine the full ATX heading ancestry at the cited passage, including repeated parent titles. */
+/** Determine the full ATX heading ancestry at the cited passage, scanning only lines before the offset, including repeated parent titles. */
 export declare function sectionPath(text: string, offset: number): string[];
 /** Retain exact quote, neighboring characters and Markdown ancestry for conservative relocation. */
 export declare function anchor(text: string, fragment: Fragment, heading?: boolean): Anchor;
