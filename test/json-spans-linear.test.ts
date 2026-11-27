@@ -26,19 +26,26 @@ test('the string scanner agrees with the retired sticky token on random hostile 
   }
 });
 
-test('hostile JSON documents stay within the linear scan budget', () => {
+/** Measure one warm run in milliseconds, discarding a cold invocation. */
+function measureMs(run: () => void): number { run(); const began = process.hrtime.bigint(); run(); return Number(process.hrtime.bigint() - began) / 1e6; }
+/** A plain linear character scan of the same bytes, used to normalize scan budgets against runner load. */
+function baselineScan(text: string): number { let count = 0; for (let index = 0; index < text.length; index++) if (text.charCodeAt(index) === 34) count++; return count; }
+
+test('the internal-whitespace scan stays near the linear machine baseline', () => {
+  const spaced = '{ ' + ' '.repeat(2_000_000) + '"a"' + ' '.repeat(2_000_000) + ': 1 }';
+  const scanMs = measureMs(() => assert.equal(jsonFragment(spaced, ['a']).text, '1'));
+  const baselineMs = measureMs(() => baselineScan(spaced));
+  assert.ok(scanMs < 5 * baselineMs, `whitespace scan took ${scanMs.toFixed(1)}ms against a ${baselineMs.toFixed(1)}ms linear baseline`);
+});
+
+test('hostile JSON documents stay within the linear smoke budget', () => {
   const budget = (label: string, run: () => void, limitMs: number): void => {
-    run();
-    const began = process.hrtime.bigint();
-    run();
-    const elapsedMs = Number(process.hrtime.bigint() - began) / 1e6;
+    const elapsedMs = measureMs(run);
     assert.ok(elapsedMs < limitMs, `hostile ${label} scan took ${elapsedMs.toFixed(1)}ms`);
   };
   const escaped = '{ "k": "' + '\\u0041'.repeat(131_000) + '" }';
-  const spaced = '{ ' + ' '.repeat(2_000_000) + '"a"' + ' '.repeat(2_000_000) + ': 1 }';
   const numbered = '[' + '9'.repeat(1_000_000) + ']';
   budget('escaped-string', () => assert.equal(jsonFragment(escaped, ['k']).text, '"' + '\\u0041'.repeat(131_000) + '"'), 1000);
-  budget('internal-whitespace', () => assert.equal(jsonFragment(spaced, ['a']).text, '1'), 2000);
   budget('digit-run', () => assert.equal(jsonFragment(numbered, []).text.length, 1_000_002), 800);
 });
 
