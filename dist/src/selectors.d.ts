@@ -9,6 +9,15 @@ export interface Fragment {
 export declare function resolveFragmentText(text: string, descriptor: Descriptor): string;
 /** Report every exact occurrence, including overlaps; never accept a fuzzy match. */
 export declare function hits(text: string, quote: string): number[];
+/** One ATX heading line: opening hash depth, exact literal title and the whole matched span. */
+export interface HeadingLine {
+    depth: number;
+    title: string;
+    start: number;
+    end: number;
+}
+/** List every ATX heading in reading order in one linear pass per line, hostile input included. */
+export declare function headingLines(text: string): HeadingLine[];
 /** Resolve the caller's initial structural selector without whole-document output. */
 export declare function select(text: string, selector: Selector): Fragment;
 /** Determine the full ATX heading ancestry at the cited passage, including repeated parent titles. */
