@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { spawnSync } from 'node:child_process';
-import { headingLines, select, sectionPath } from '../src/selectors.ts';
+import { anchor, headingLines, select, sectionPath } from '../src/selectors.ts';
 
 /** The retired ATX heading regex, kept as the byte-exact parity oracle for the linear parser. */
 const retiredHeadingRegex = /^(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*\r?$/gm;
@@ -79,4 +79,64 @@ test('the retired regex demonstrably exceeds the same budget on the hostile line
   assert.equal(headingLines('# x' + ' '.repeat(3200) + 'y').length, 1);
   const probe = spawnSync(process.execPath, ['-e', "const rx=/^(#{1,6})[ \\t]+(.+?)[ \\t]*#*[ \\t]*\\r?$/gm; const line='# x'+' '.repeat(3200)+'y'; void [...line.matchAll(rx)].length;"], { timeout: 400 });
   assert.equal(probe.signal, 'SIGTERM', 'the retired regex finished the hostile line within the budget');
+});
+
+/** The retired unbounded ancestry scan, kept as the equivalence oracle for the offset bound. */
+function retiredSectionPath(text: string, offset: number): string[] {
+  const stack: { depth: number; title: string }[] = [];
+  for (const heading of headingLines(text)) {
+    if (heading.start >= offset) break;
+    while (stack.length > 0 && stack.at(-1)!.depth >= heading.depth) stack.pop();
+    stack.push({ depth: heading.depth, title: heading.title });
+  }
+  return stack.map(entry => entry.title);
+}
+
+test('the offset bound keeps ancestry byte-identical to the unbounded scan for every offset kind', () => {
+  const random = seededRandom(861127 + 7);
+  const alphabet = ['#', ' ', '\t', 'a', '#', ' ', '#', '\n', '\r', '\u2028', 'x'];
+  for (let round = 0; round < 300; round++) {
+    const lines: string[] = [];
+    for (let line = 0; line < 8; line++) {
+      let text = '';
+      const width = Math.floor(random() * 20);
+      for (let index = 0; index < width; index++) text += alphabet[Math.floor(random() * alphabet.length)];
+      lines.push(text);
+    }
+    const document = lines.join(random() < 0.5 ? '\n' : '\r\n');
+    for (const offset of [0, 1, 2.5, -3, document.length / 2, document.length - 1, document.length, document.length + 5, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      assert.deepEqual(sectionPath(document, offset), retiredSectionPath(document, offset), JSON.stringify([document, offset]));
+    }
+  }
+});
+
+test('the heading list bound returns exactly the headings starting before it', () => {
+  const random = seededRandom(20261127 + 5);
+  const alphabet = ['#', ' ', '\t', 'a', '#', ' ', '#', '\n', '\r', '\u2028', 'x'];
+  for (let round = 0; round < 300; round++) {
+    const lines: string[] = [];
+    for (let line = 0; line < 8; line++) {
+      let text = '';
+      const width = Math.floor(random() * 20);
+      for (let index = 0; index < width; index++) text += alphabet[Math.floor(random() * alphabet.length)];
+      lines.push(text);
+    }
+    const document = lines.join(random() < 0.5 ? '\n' : '\u2028');
+    const full = headingLines(document);
+    for (const bound of [-3, 0, 1, 2.5, document.length / 2, document.length - 1, document.length, document.length + 9]) {
+      assert.deepEqual(headingLines(document, bound), full.filter(entry => entry.start < bound), JSON.stringify([document, bound]));
+    }
+  }
+});
+
+test('ancestry scans stop at the requested offset instead of the whole document', () => {
+  const document = '# Root\n\nBody.\n' + '# h\n'.repeat(4_000_000);
+  const fragment = select(document, { kind: 'heading', heading: 'Root', paragraph: 1 });
+  assert.equal(fragment.text, 'Body.');
+  const began = process.hrtime.bigint();
+  assert.deepEqual(sectionPath(document, fragment.start), ['Root']);
+  const witness = anchor(document, fragment, true);
+  assert.deepEqual(witness.sectionPath, ['Root']);
+  const elapsedMs = Number(process.hrtime.bigint() - began) / 1e6;
+  assert.ok(elapsedMs < 25, `bounded ancestry scan took ${elapsedMs.toFixed(1)}ms`);
 });

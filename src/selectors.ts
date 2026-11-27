@@ -44,19 +44,20 @@ function parseHeadingLine(text: string, start: number, end: number, matchEnd: nu
   const tail = Math.max(scan + 1, content + 1);
   return { depth, title: text.slice(content, tail), start, end: matchEnd };
 }
-/** List every ATX heading in reading order in one linear pass per line, hostile input included. */
-export function headingLines(text: string): HeadingLine[] {
+/** List every ATX heading starting before the exclusive end bound, in reading order, in one linear pass per line, hostile input included. */
+export function headingLines(text: string, end = text.length): HeadingLine[] {
+  const limit = Number.isNaN(end) ? text.length : Math.max(0, Math.min(end, text.length));
   const headings: HeadingLine[] = [];
   const length = text.length;
   let start = 0;
-  while (start <= length) {
-    let end = start;
-    while (end < length && !isLineTerminator(text[end])) end++;
-    const matchEnd = end < length && text[end] === '\r' && (end + 1 === length || isLineTerminator(text[end + 1])) ? end + 1 : end;
-    const heading = parseHeadingLine(text, start, end, matchEnd);
+  while (start < limit) {
+    let lineEnd = start;
+    while (lineEnd < length && !isLineTerminator(text[lineEnd])) lineEnd++;
+    const matchEnd = lineEnd < length && text[lineEnd] === '\r' && (lineEnd + 1 === length || isLineTerminator(text[lineEnd + 1])) ? lineEnd + 1 : lineEnd;
+    const heading = parseHeadingLine(text, start, lineEnd, matchEnd);
     if (heading !== null) headings.push(heading);
-    if (end === length) break;
-    start = end + 1;
+    if (lineEnd === length) break;
+    start = lineEnd + 1;
   }
   return headings;
 }
@@ -86,11 +87,10 @@ export function select(text: string, selector: Selector): Fragment {
   requireInput(fragment.length > 0, 'An anchor cannot cite an empty fragment');
   return { text: fragment, start, end: start + fragment.length };
 }
-/** Determine the full ATX heading ancestry at the cited passage, including repeated parent titles. */
+/** Determine the full ATX heading ancestry at the cited passage, scanning only lines before the offset, including repeated parent titles. */
 export function sectionPath(text: string, offset: number): string[] {
   const stack: { depth: number; title: string }[] = [];
-  for (const heading of headingLines(text)) {
-    if (heading.start >= offset) break;
+  for (const heading of headingLines(text, offset)) {
     while (stack.length > 0 && stack.at(-1)!.depth >= heading.depth) stack.pop();
     stack.push({ depth: heading.depth, title: heading.title });
   }
