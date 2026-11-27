@@ -52,3 +52,29 @@ test('hostile JSON documents stay within the linear smoke budget', () => {
 test('truncated literals refuse exactly where the retired alternation did', () => {
   for (const source of ['tru', 'nul', 'fals', 'trx', 'nUll', 'true1', 'nulx']) assert.throws(() => jsonFragment(source, []), /valid JSON/);
 });
+
+test('JSON span tokenization does not execute regular expressions', t => {
+  const lexemes = ['null', 'true', 'false', '0', '-0', '9007199254740993', '1.00e+400', '-4.2E-7', '""', String.raw`"A\u0042\n\/"`, '[]', '{}'];
+  for (const gap of ['', ' ', '\r\n\t', ' \t'.repeat(16)]) {
+    const prefix = `${gap}{${gap}"\\u006b"${gap}:${gap}[${gap}`;
+    const separator = `,${gap}`;
+    const source = `${prefix}${lexemes.join(separator)}${gap}]${gap}}${gap}`;
+    const fragments: ReturnType<typeof jsonFragment>[] = [];
+
+    // Observe only the production call. The parity oracle and assertions may use regexes.
+    const exec = t.mock.method(RegExp.prototype, 'exec');
+    try {
+      for (const index of lexemes.keys()) fragments.push(jsonFragment(source, ['k', String(index)]));
+    } finally {
+      exec.mock.restore();
+    }
+
+    assert.equal(exec.mock.callCount(), 0, 'JSON span tokenization must use the forward scanner');
+    let start = prefix.length;
+    for (const [index, text] of lexemes.entries()) {
+      const end = start + text.length;
+      assert.deepEqual(fragments[index], { text, start, end });
+      start = end + separator.length;
+    }
+  }
+});

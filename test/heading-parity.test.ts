@@ -51,6 +51,19 @@ test('randomized documents keep the linear parser byte-identical to the retired 
   }
 });
 
+test('ATX heading line scanning does not execute regular expressions', t => {
+  const expected = parityCorpus.map(retiredHeadings);
+  const parsed: typeof expected = [];
+  const exec = t.mock.method(RegExp.prototype, 'exec');
+  try {
+    for (const text of parityCorpus) parsed.push([...headingLines(text)]);
+  } finally {
+    exec.mock.restore();
+  }
+  assert.equal(exec.mock.callCount(), 0, 'ATX heading lines must use the forward scanner');
+  assert.deepEqual(parsed, expected);
+});
+
 test('hostile heading lines resolve within a fixed budget instead of backtracking polynomially', () => {
   const spaceRunTitle = 'x' + ' '.repeat(50_000) + 'y';
   const spaceRun = '# ' + spaceRunTitle;
@@ -115,15 +128,17 @@ test('the heading list bound returns exactly the headings starting before it', (
 
 test('ancestry scans stop at the requested offset instead of the whole document', () => {
   const shortPrefix = '# Root\n\nBody.\n';
-  const document = shortPrefix + '# h\n'.repeat(4_000_000);
-  const began = process.hrtime.bigint();
   const fragment = select(shortPrefix, { kind: 'heading', heading: 'Root', paragraph: 1 });
   assert.equal(fragment.text, 'Body.');
+  const document = shortPrefix + '# h\n'.repeat(4_000_000);
+  // Materialize the fixture before timing work on its prefix.
+  assert.equal(document.charCodeAt(document.length - 1), 10);
+  const began = process.hrtime.bigint();
   assert.deepEqual(sectionPath(document, fragment.start), ['Root']);
   const witness = anchor(document, fragment, true);
   assert.deepEqual(witness.sectionPath, ['Root']);
   const elapsedMs = Number(process.hrtime.bigint() - began) / 1e6;
-  assert.ok(elapsedMs < 100, `short-prefix setup and bounded ancestry scan took ${elapsedMs.toFixed(1)}ms`);
+  assert.ok(elapsedMs < 100, `bounded ancestry scan took ${elapsedMs.toFixed(1)}ms`);
 });
 
 test('ancestry resolution stays within a bounded heap over millions of headings', () => {
