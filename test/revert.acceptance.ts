@@ -9,7 +9,8 @@ import { expectBehavioralFailure } from './revert-control.ts';
 interface RevertCase { name: string; file: string; target: string; mutation: string; test: string; suite?: string }
 /** Extract a top-level function using the repository's column-zero closing-brace convention. */
 function functionText(source: string, name: string): string {
-  const signature = `function ${name}(`; assert.equal(source.split(signature).length, 2);
+  const generatorSignature = `function* ${name}(`;
+  const signature = source.includes(generatorSignature) ? generatorSignature : `function ${name}(`; assert.equal(source.split(signature).length, 2);
   const declaration = source.indexOf(signature); const start = source.lastIndexOf('\n', declaration) + 1; const end = source.indexOf('\n}', declaration);
   assert.ok(end !== -1); return source.slice(start, end + 2);
 }
@@ -19,10 +20,8 @@ const cases: RevertCase[] = [
   { name: 'two independent axes', file: 'src/evidence.ts', target: "row.freshness = row.currentDigest === row.oldDigest ? 'current' : 'changed';", mutation: "row.freshness = row.sourceChanged ? 'changed' : 'current';", test: 'unchanged, outside edits, insertion, movement, duplicate anchors, internal edit and deleted file' },
   { name: 'lock-held review fencing', file: 'src/store.ts', target: "      if (document.metadata.evidence_state !== raw) throw new Error('Target no longer carries upsert key evidence_state');", mutation: '', test: 'SDK item mutation precondition refuses stale evidence state' },
   { name: 'linear heading scan', file: 'src/selectors.ts', target: functionText(await readFile('src/selectors.ts', 'utf8'), 'headingLines'),
-    mutation: `export function headingLines(text: string): HeadingLine[] {
-  const headings: HeadingLine[] = [];
-  for (const match of text.matchAll(/^(#{1,6})[ \\t]+(.+?)[ \\t]*#*[ \\t]*\\r?$/gm)) headings.push({ depth: match[1].length, title: match[2], start: match.index, end: match.index + match[0].length });
-  return headings;
+    mutation: `export function* headingLines(text: string): Generator<HeadingLine, void, void> {
+  for (const match of text.matchAll(/^(#{1,6})[ \\t]+(.+?)[ \\t]*#*[ \\t]*\\r?$/gm)) yield { depth: match[1].length, title: match[2], start: match.index, end: match.index + match[0].length };
 }`, test: 'hostile heading line scan stays under the regression budget', suite: 'test/heading-parity.test.ts' },
 ];
 for (const [name, file, functionName, testName] of [
