@@ -18,6 +18,13 @@ const cases: RevertCase[] = [
   { name: 'anchor uniqueness', file: 'src/selectors.ts', target: "  if (occurrences.length > 1) throw new EvidenceError('ambiguous', 'Exact anchor occurs more than once', 'Review and explicitly re-anchor to a unique passage');", mutation: '', test: 'unchanged, outside edits, insertion, movement, duplicate anchors, internal edit and deleted file' },
   { name: 'two independent axes', file: 'src/evidence.ts', target: "row.freshness = row.currentDigest === row.oldDigest ? 'current' : 'changed';", mutation: "row.freshness = row.sourceChanged ? 'changed' : 'current';", test: 'unchanged, outside edits, insertion, movement, duplicate anchors, internal edit and deleted file' },
   { name: 'lock-held review fencing', file: 'src/store.ts', target: "      if (document.metadata.evidence_state !== raw) throw new Error('Target no longer carries upsert key evidence_state');", mutation: '', test: 'SDK item mutation precondition refuses stale evidence state' },
+  { name: 'linear heading scan', file: 'src/selectors.ts', target: functionText(await readFile('src/selectors.ts', 'utf8'), 'headingLines'),
+    mutation: `export function headingLines(text: string): HeadingLine[] {
+  const headings: HeadingLine[] = [];
+  for (const match of text.matchAll(/^(#{1,6})[ \\t]+(.+?)[ \\t]*#*[ \\t]*\\r?$/gm)) headings.push({ depth: match[1].length, title: match[2], start: match.index, end: match.index + match[0].length });
+  return headings;
+}`, test: 'hostile heading line scan stays under the regression budget', suite: 'test/heading-parity.test.ts' },
+  { name: 'linear JSON whitespace', file: 'src/json-spans.ts', target: "  function whitespace(): void { let index = cursor; while (isJsonSpaceCode(text.charCodeAt(index))) index++; cursor = index; }", mutation: "  function whitespace(): void { while (/[ \\t\\r\\n]/.test(text[cursor] ?? 'x')) cursor++; }", test: 'hostile JSON documents stay within the linear scan budget', suite: 'test/json-spans-linear.test.ts' },
 ];
 for (const [name, file, functionName, testName] of [
   ['passage identity', 'src/selectors.ts', 'resolveFragment', 'review: unrelated surviving quote cannot replace the cited passage'],
