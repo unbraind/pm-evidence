@@ -41,3 +41,7 @@ test('hostile JSON documents stay within the linear scan budget', () => {
   budget('internal-whitespace', () => assert.equal(jsonFragment(spaced, ['a']).text, '1'), 400);
   budget('digit-run', () => assert.equal(jsonFragment(numbered, []).text.length, 1_000_002), 150);
 });
+
+test('truncated literals refuse exactly where the retired alternation did', () => {
+  for (const source of ['tru', 'nul', 'fals', 'trx', 'nUll', 'true1', 'nulx']) assert.throws(() => jsonFragment(source, []), /valid JSON/);
+});
