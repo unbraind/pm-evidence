@@ -6,8 +6,23 @@ status: open
 priority: 2
 tags[2]: "gh:unbraind/pm-evidence#86","github_author:unbraind"
 created_at: "2026-11-27T10:54:17Z"
-updated_at: "2026-11-27T12:09:24.161Z"
+updated_at: "2026-11-27T12:31:19.293Z"
 author: pm-github
+comments[3]{created_at,author,text}:
+  "2026-11-27T12:30:35.562Z",codex-agent,"Re-recording branch evidence after adopting the gated sync's item records wholesale (history is a byte-identical prefix-extension of main's; no lines spliced). Reproduction: the retired heading regex measured 1.7s at 800 hostile chars, 13.1s at 1600 (~n^2.8), extrapolating to hours for a 50,000-char line; the retired JSON tokenizer measured linear on every adversarial probe (1MB escaped string 0.03ms, 500k escape pairs 0.2ms, 1MB whitespace 220ms), so alert 1 is a CodeQL false positive on the model, and the tokenizer was still rewritten regex-free so linearity is provable by construction and the alert closes mechanically. Design: headingLines() single-pass per-line parser shared by paragraph() and sectionPath(), byte-identical to the retired regex (curated corpus plus 400 seeded random documents; exact lazy-title and CR-swallow span semantics), and a regex-free JSON scanner with JSON.parse still decoding object keys."
+  "2026-11-27T12:30:38.762Z",codex-agent,"Revert proofs: with both changed source files reverted to origin/main, heading-parity.test.ts fails to load (missing headingLines export) and json-spans-linear.test.ts fails exactly once with the hostile-budget test measuring 1831.9ms on the retired tokenizer against its 400ms budget; restored, 7/7 pass. The repo revert harness carries the finer-grained linear heading scan control (retired regex restored by function mutation: exactly one failing test, the 800-space probe at ~1700ms against its 100ms budget, sources restored byte-identically). A JSON-whitespace harness control was withdrawn: the retired loop is also linear, so a timing control straddles the budget under JIT variance (measured 868ms and 1831ms on different runs); the file-level proof stands instead."
+  "2026-11-27T12:30:41.838Z",codex-agent,"Gates: typecheck, lint, docstring, duplication 0%, identity and privacy 0 violations; dist rebuilt and dist:check verifies 56 committed artifacts against a pristine build with 168 refused mutations; targeted suites 32/32; coalesced and criteria real-data harnesses pass while the base real-data harness fails 14!=20 identically on pristine origin/main (pre-existing corpus drift on the untouched lines path); changelog regenerated and changelog:check passes; CI rounds: first release-gate run failed only the unchanged 100% branch coverage gate (one uncovered truncated-literal refusal branch, now covered); second round at the coverage-fix head: codeql PASS, test (22) PASS, test (26) PASS 7m15s; all three polynomial-ReDoS alerts stay clear. Work stops here with the item open; the orchestrator verifies and closes."
+files[5]{path,scope}:
+  src/json-spans.ts,project
+  src/selectors.ts,project
+  test/heading-parity.test.ts,project
+  test/json-spans-linear.test.ts,project
+  test/revert.acceptance.ts,project
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node --test --test-concurrency=2 test/heading-parity.test.ts test/json-spans-linear.test.ts test/selectors.test.ts test/json-spans.test.ts,project,codex-agent,"2026-11-27T12:31:14.418Z",local_mutation,fix/linear-heading-and-token-parsing
+  node test/revert.acceptance.ts,project,codex-agent,"2026-11-27T12:31:19.144Z",local_mutation,fix/linear-heading-and-token-parsing
+docs[1]{path,scope}:
+  "https://github.com/unbraind/pm-evidence/issues/86",project
 github_close_reason: ""
 github_closed_at: ""
 github_created_at: "2026-11-27T10:54:17Z"
