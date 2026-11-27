@@ -1,0 +1,21 @@
+id: pm-evidence-github-cc12c36f952a-87
+title: "Follow-up: harden sibling heading-regex shapes flagged by the same CodeQL polynomial model (pm-todos, pm-changelog)"
+description: "GH issue #87: https://github.com/unbraind/pm-evidence/issues/87 · author @unbraind · created 2026-11-27T11:58:30Z · updated 2026-11-27T11:58:30Z"
+type: Issue
+status: open
+priority: 2
+tags[2]: "gh:unbraind/pm-evidence#87","github_author:unbraind"
+created_at: "2026-11-27T11:58:30Z"
+updated_at: "2026-11-27T12:09:24.284Z"
+author: pm-github
+github_close_reason: ""
+github_closed_at: ""
+github_created_at: "2026-11-27T11:58:30Z"
+github_link_only: false
+github_number: 87
+github_release: ""
+github_state: open
+github_state_reason: unspecified
+github_updated_at: "2026-11-27T11:58:30Z"
+github_url: "https://github.com/unbraind/pm-evidence/issues/87"
+body: "Follow-up to #86. While closing the three pm-evidence polynomial-ReDoS alerts, the fleet was scanned for the same regex shapes over agent-supplied text.\n\nFindings outside this package (not fixed by #86's PR, per scope):\n\n- `pm-todos/index.ts:185` — `HEADER_RE = /^(#{1,6})[ \\t]+(\\S.*)$/`. The title is one greedy pass with no lazy-quantifier tail, so it is linear today, but it is one edit away from the retired pm-evidence shape. Recommend the same linear-scanner treatment when next touched.\n- `pm-changelog/src/check-drift.ts:29` and `:42`, and `pm-changelog/src/generator.ts:1647` — heading and closing-sequence alternations such as `(?:[-*_]\\s*){3,}$` inside line classification. Each is analyzed linear on disjoint alphabets (the same false-positive class as pm-evidence alert #1), but CodeQL's polynomial model can flag them; they currently parse changelog and tracker prose that agents supply.\n\nSuggested action in those packages: either restate the line classifiers as single-pass scanners (as pm-evidence now does) or add measured linearity tests plus a documented dismissal rationale, mirroring the pm-evidence pattern. No CodeQL alert is currently open on those repositories; this is preventive hardening, not an active defect."
