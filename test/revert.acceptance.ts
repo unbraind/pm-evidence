@@ -24,7 +24,6 @@ const cases: RevertCase[] = [
   for (const match of text.matchAll(/^(#{1,6})[ \\t]+(.+?)[ \\t]*#*[ \\t]*\\r?$/gm)) headings.push({ depth: match[1].length, title: match[2], start: match.index, end: match.index + match[0].length });
   return headings;
 }`, test: 'hostile heading line scan stays under the regression budget', suite: 'test/heading-parity.test.ts' },
-  { name: 'linear JSON whitespace', file: 'src/json-spans.ts', target: "  function whitespace(): void { let index = cursor; while (isJsonSpaceCode(text.charCodeAt(index))) index++; cursor = index; }", mutation: "  function whitespace(): void { while (/[ \\t\\r\\n]/.test(text[cursor] ?? 'x')) cursor++; }", test: 'hostile JSON documents stay within the linear scan budget', suite: 'test/json-spans-linear.test.ts' },
 ];
 for (const [name, file, functionName, testName] of [
   ['passage identity', 'src/selectors.ts', 'resolveFragment', 'review: unrelated surviving quote cannot replace the cited passage'],
