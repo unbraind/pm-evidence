@@ -52,10 +52,9 @@ function parseHeadingLine(text, start, end, matchEnd) {
     const tail = Math.max(scan + 1, content + 1);
     return { depth, title: text.slice(content, tail), start, end: matchEnd };
 }
-/** List every ATX heading starting before the exclusive end bound, in reading order, in one linear pass per line, hostile input included. */
-export function headingLines(text, end = text.length) {
+/** Yield every ATX heading starting before the exclusive end bound, in reading order, one linear pass per line, hostile input included; consumers that reduce to a bounded working set never materialize the whole list. */
+export function* headingLines(text, end = text.length) {
     const limit = Number.isNaN(end) ? text.length : Math.max(0, Math.min(end, text.length));
-    const headings = [];
     const length = text.length;
     let start = 0;
     while (start < limit) {
@@ -65,16 +64,15 @@ export function headingLines(text, end = text.length) {
         const matchEnd = lineEnd < length && text[lineEnd] === '\r' && (lineEnd + 1 === length || isLineTerminator(text[lineEnd + 1])) ? lineEnd + 1 : lineEnd;
         const heading = parseHeadingLine(text, start, lineEnd, matchEnd);
         if (heading !== null)
-            headings.push(heading);
+            yield heading;
         if (lineEnd === length)
             break;
         start = lineEnd + 1;
     }
-    return headings;
 }
 /** Select an ATX heading's paragraph; duplicate headings cannot establish identity. */
 function paragraph(text, selector) {
-    const headings = headingLines(text);
+    const headings = [...headingLines(text)];
     const matches = headings.filter(entry => entry.title === selector.heading);
     if (matches.length !== 1)
         throw new EvidenceError(matches.length === 0 ? 'missing' : 'ambiguous', 'Heading is absent or repeated', 'Select a unique ATX heading');
