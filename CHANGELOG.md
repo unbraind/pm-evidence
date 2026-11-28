@@ -2,7 +2,9 @@
 
 ## 2026.11.27 - 2026-11-27
 
-No changes.
+### Fixed
+
+- Three CodeQL polynomial-ReDoS alerts: ATX heading regex in selectors and the JSON span tokenizer ([pm-evidence-github-cc12c36f952a-86](https://github.com/unbraind/pm-evidence/blob/main/.agents/pm/issues/pm-evidence-github-cc12c36f952a-86.toon))
 
 ## 2026.11.26 - 2026-11-26
 
